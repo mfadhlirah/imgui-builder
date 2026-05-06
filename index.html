@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>ImGui Menu Builder v3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Consolas','Courier New',monospace;font-size:12px;background:#080812;display:flex;flex-direction:column;height:100vh;overflow:hidden;color:#ddd}
+:root{--bg:#151525;--bg2:#101020;--acc:#e94560;--a2:#7c52d4;--txt:#ddd;--txt2:#6677aa;--bdr:#1e1e3a;--wgt:#181830;--hov:#1e1e3a;--grn:#4caf50;--red:#ef5350;--pnl:#111122}
+
+/* HEADER */
+#hdr{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 12px;display:flex;align-items:center;gap:8px;height:38px;flex-shrink:0}
+#hdr h1{font-size:13px;color:var(--acc);font-weight:700;letter-spacing:1px}
+.hbadge{font-size:9px;background:var(--a2);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px}
+.hdiv{width:1px;height:18px;background:var(--bdr);flex-shrink:0}
+.hb{background:none;border:1px solid var(--bdr);color:var(--txt2);padding:3px 9px;border-radius:3px;cursor:pointer;font-size:10px;font-family:monospace;white-space:nowrap;transition:.15s}
+.hb:hover{border-color:var(--acc);color:var(--acc)}
+.hb.ok{border-color:#2a6a3a;color:var(--grn)}
+.hb.ok:hover{background:#4caf5012}
+#hflex{flex:1}
+
+/* LAYOUT SWITCHER */
+#layout-bar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:5px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+#layout-bar label{font-size:10px;color:var(--txt2)}
+.lbtn{background:var(--wgt);border:1px solid var(--bdr);color:var(--txt2);padding:4px 14px;border-radius:3px;cursor:pointer;font-size:11px;font-family:monospace;transition:.15s;display:flex;align-items:center;gap:5px}
+.lbtn:hover{border-color:var(--a2);color:var(--txt)}
+.lbtn.act{border-color:var(--acc);color:var(--acc);background:#e9456010}
+.lbtn .li{font-size:13px}
+#lbar-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.ws{background:var(--wgt);border:1px solid var(--bdr);color:var(--txt);padding:2px 5px;font-size:10px;font-family:monospace;border-radius:3px;outline:none}
+.ws:focus{border-color:var(--acc)}
+
+/* APP GRID */
+#app{display:grid;grid-template-columns:175px 1fr 220px;flex:1;overflow:hidden;min-height:0}
+
+/* SIDEBAR */
+#sb{background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
+.sb-tabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sb-tab{flex:1;padding:6px 4px;text-align:center;font-size:10px;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+.sb-tab:hover{color:var(--txt)}
+.sb-tab.act{color:var(--acc);border-bottom-color:var(--acc)}
+.sb-panel{flex:1;overflow-y:auto;padding:8px}
+.sb-panel.hidden{display:none}
+.cat-lbl{font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;padding:7px 3px 4px;user-select:none}
+.wi{background:var(--wgt);border:1px solid var(--bdr);border-radius:3px;padding:5px 8px;margin-bottom:3px;cursor:grab;font-size:11px;display:flex;align-items:center;gap:6px;transition:.15s;user-select:none}
+.wi:hover{background:var(--hov);border-color:var(--acc);color:#fff}
+.wi .ic{color:var(--acc);min-width:13px;text-align:center}
+#sb-search{width:100%;background:var(--wgt);border:1px solid var(--bdr);border-bottom:1px solid var(--bdr);color:var(--txt);padding:5px 8px;font-size:11px;font-family:monospace;outline:none;flex-shrink:0}
+#sb-search:focus{border-color:var(--acc)}
+
+/* Nav editor */
+.nav-section-lbl{font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;padding:8px 3px 4px}
+.nav-add-btn{width:100%;background:none;border:1px dashed var(--bdr);color:var(--txt2);padding:4px;border-radius:3px;cursor:pointer;font-size:10px;font-family:monospace;margin-bottom:3px;transition:.15s}
+.nav-add-btn:hover{border-color:var(--acc);color:var(--acc)}
+.nav-ed-item{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.nav-ed-item input{flex:1;background:var(--wgt);border:1px solid var(--bdr);color:var(--txt);padding:3px 5px;border-radius:2px;font-size:10px;font-family:monospace;outline:none}
+.nav-ed-item input:focus{border-color:var(--acc)}
+.nav-ed-del{background:none;border:none;color:#444;cursor:pointer;font-size:11px;padding:0 2px;transition:.15s}
+.nav-ed-del:hover{color:var(--red)}
+.nav-ed-sub{margin-left:12px}
+
+/* CANVAS */
+#canvas-area{display:flex;flex-direction:column;background:#080812;overflow:hidden}
+#toolbar{display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0}
+.tb{background:var(--wgt);border:1px solid var(--bdr);color:var(--txt2);padding:3px 9px;border-radius:3px;cursor:pointer;font-size:10px;font-family:monospace;transition:.15s;white-space:nowrap}
+.tb:hover{border-color:var(--acc);color:var(--txt)}
+.tb.danger{border-color:#4a1515;color:var(--red)}.tb.danger:hover{background:#ef535010}
+.tb.primary{border-color:#3a2a6a;color:#a78bfa}.tb.primary:hover{background:#7c52d410;border-color:var(--a2)}
+.tb.ok{border-color:#1a4a1a;color:var(--grn)}.tb.ok:hover{background:#4caf5012}
+#tsep{flex:1}
+#canvas{flex:1;position:relative;overflow:hidden;background-image:repeating-linear-gradient(0deg,transparent,transparent 19px,#ffffff03 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,#ffffff03 20px)}
+
+/* IMGUI PREVIEW WINDOW */
+#igwin{position:absolute;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:3px;box-shadow:8px 8px 32px #00000099;user-select:none;display:flex;flex-direction:column}
+#igwin-tb{padding:5px 10px;cursor:move;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#igwin-tb .wt{color:#fff;font-size:11px;font-weight:500;pointer-events:none}
+#igwin-tb .wx{color:#ffffff44;font-size:12px}
+#igwin-body{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* SIDE LAYOUT */
+#nav-pane{overflow-y:auto;border-right:1px solid #2a2a4a;flex-shrink:0;background:#141428;padding:4px 0}
+.nav-cat{padding:4px 10px;font-size:11px;color:#999;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.1s}
+.nav-cat:hover{color:#ddd;background:#ffffff08}
+.nav-cat.act{color:#ddd;background:#ffffff10}
+.nav-cat .nc-arr{font-size:9px;transition:.15s}
+.nav-cat .nc-ic{font-size:11px}
+.nav-sub{padding:3px 10px 3px 26px;font-size:10px;color:#666;cursor:pointer;transition:.1s}
+.nav-sub:hover{color:#bbb;background:#ffffff06}
+.nav-sub.act{color:#bbb;background:#ffffff0c}
+#content-pane{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px}
+
+/* TOP LAYOUT */
+#top-tabbar{display:flex;border-bottom:1px solid #2a2a4a;background:#141428;flex-shrink:0;overflow-x:auto}
+.top-tab{padding:5px 14px;font-size:11px;color:#666;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.1s}
+.top-tab:hover{color:#bbb}
+.top-tab.act{color:#ccc;border-bottom-color:var(--acc)}
+#top-content-pane{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px}
+
+/* CLASSIC LAYOUT */
+#classic-pane{flex:1;overflow-y:auto;padding:6px}
+
+/* SECTION CARDS */
+.section-card{background:#1e1e38;border:1px solid #2a2a4a;border-radius:2px;flex-shrink:0}
+.section-card.selected-sec>.sec-hdr{background:#e9456015;border-bottom-color:#e9456044}
+.sec-hdr{display:flex;align-items:center;padding:4px 8px;background:#16162e;border-bottom:1px solid #232340;cursor:pointer;gap:5px}
+.sec-hdr-title{flex:1;font-size:11px;color:#bbb;font-weight:500}
+.sec-toggle{font-size:9px;padding:1px 7px;border-radius:2px;border:1px solid;cursor:pointer;font-family:monospace;transition:.15s}
+.sec-toggle.on{color:#4caf50;border-color:#2a5a2a;background:#4caf5012}
+.sec-toggle.off{color:#666;border-color:#333;background:transparent}
+.sec-arr{color:#444;font-size:10px;margin-left:2px}
+.sec-body{padding:4px 8px 6px}
+.sec-drop-zone{border:2px dashed #e9456044;background:#e9456008;height:22px;margin:2px 0;display:flex;align-items:center;justify-content:center;color:#e9456066;font-size:10px;border-radius:2px}
+.sec-empty{font-size:10px;color:#333355;text-align:center;padding:8px;font-style:italic}
+.sec-add-btn{width:calc(100% - 12px);margin:4px 6px 2px;background:none;border:1px dashed #2a2a44;color:#333366;padding:3px;border-radius:2px;cursor:pointer;font-size:10px;font-family:monospace;transition:.15s}
+.sec-add-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* Widget items inside sections */
+.witem{padding:2px 3px;border-radius:2px;cursor:pointer;position:relative;margin:1px 0;transition:.1s}
+.witem:hover{background:#ffffff07}
+.witem.sel{background:#e9456015;outline:1px solid #e9456055}
+.wdh{position:absolute;right:2px;top:50%;transform:translateY(-50%);color:#222244;cursor:grab;font-size:9px;opacity:0;transition:.1s}
+.witem:hover .wdh{opacity:1}
+
+/* Inline widget renders */
+.iw-btn{background:#252548;border:1px solid #3a3a60;color:#aaa;padding:1px 12px;border-radius:2px;font-size:10px;display:inline-block}
+.iw-chk{display:flex;align-items:center;gap:4px;font-size:10px;color:#aaa}
+.iw-chkbox{width:11px;height:11px;border:1px solid #555;background:#141430;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:7px;border-radius:1px}
+.iw-sld{font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px}
+.iw-bar{flex:1;height:10px;background:#141430;border:1px solid #333;border-radius:1px;overflow:hidden;min-width:50px}
+.iw-fill{height:100%;background:linear-gradient(90deg,#533483,#a855f7)}
+.iw-txt{font-size:10px;color:#aaa}
+.iw-sep{border-top:1px solid #2a2a4a;margin:2px 0}
+.iw-combo{font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px}
+.iw-cbox{background:#141430;border:1px solid #333;padding:0 5px;font-size:10px;color:#888;display:inline-flex;align-items:center;gap:10px}
+.iw-inp{font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px}
+.iw-ibox{background:#141430;border:1px solid #333;padding:0 5px;font-size:10px;color:#444;min-width:80px}
+.iw-hotkey{font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px}
+.iw-hkbox{border:1px solid var(--acc);padding:0 7px;font-size:10px;color:var(--acc);background:#e9456010}
+.iw-prog{font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px}
+.iw-pbar{flex:1;height:9px;background:#141430;border:1px solid #333;overflow:hidden;min-width:50px}
+.iw-pfill{height:100%;background:linear-gradient(90deg,#4caf50,#8bc34a)}
+.iw-tab-bar{display:flex;border-bottom:1px solid #2a2a4a;margin-bottom:3px}
+.iw-tab{padding:1px 8px;font-size:10px;color:#555;border:1px solid transparent}
+.iw-tab.a{color:#aaa;border:1px solid #2a2a4a;border-bottom-color:#1e1e38;background:#1e1e38;margin-bottom:-1px}
+.drop-ind{border:2px dashed #e9456055;background:#e9456008;height:20px;margin:1px 0;display:flex;align-items:center;justify-content:center;color:#e9456066;font-size:9px;border-radius:2px}
+
+/* PROPERTIES */
+#props{background:var(--pnl);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
+#props-hdr{padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:1px;font-weight:600;position:sticky;top:0;background:var(--pnl);z-index:1}
+#props-body{padding:10px;flex:1}
+.pg{margin-bottom:9px}
+.pl{font-size:10px;color:var(--txt2);margin-bottom:3px}
+.pi{width:100%;background:var(--wgt);border:1px solid var(--bdr);color:var(--txt);padding:4px 7px;border-radius:3px;font-size:11px;font-family:monospace;outline:none;transition:.15s}
+.pi:focus{border-color:var(--acc)}
+select.pi{cursor:pointer}
+.pi-chk{display:flex;align-items:center;gap:6px;color:var(--txt);font-size:11px;cursor:pointer}
+.pi-chk input{accent-color:var(--acc)}
+.phr{border-top:1px solid var(--bdr);margin:10px 0}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.pbtn{background:var(--wgt);border:1px solid var(--bdr);color:var(--txt2);padding:5px 4px;border-radius:3px;cursor:pointer;font-size:10px;text-align:center;transition:.15s;border-top-width:2px}
+.pbtn:hover{color:var(--txt)}
+.pbtn.sel{border-color:var(--acc)!important;background:#e9456012;color:var(--acc)}
+.action-row{display:flex;gap:4px;margin-top:10px}
+.action-btn{flex:1;padding:5px;border-radius:3px;cursor:pointer;font-size:10px;font-family:monospace;border:1px solid var(--bdr);background:var(--wgt);color:var(--txt2);transition:.15s}
+.action-btn:hover{border-color:var(--acc);color:var(--txt)}
+.action-btn.del{border-color:#3a1515;color:var(--red)}.action-btn.del:hover{background:#ef535010}
+
+/* CODE PANEL */
+#code-panel{display:none;position:absolute;inset:0;background:#080812;flex-direction:column;z-index:30}
+#code-panel.show{display:flex}
+#code-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--bdr)}
+.ctab{padding:7px 14px;font-size:11px;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:.1s}
+.ctab.act{color:var(--acc);border-bottom-color:var(--acc)}
+#code-acts{margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:10px}
+.cabtn{background:var(--wgt);border:1px solid var(--bdr);color:var(--txt2);padding:3px 11px;border-radius:3px;cursor:pointer;font-size:10px;font-family:monospace;transition:.15s}
+.cabtn:hover{border-color:var(--acc);color:var(--acc)}
+.cabtn.ok{border-color:#2a4a2a;color:var(--grn)}.cabtn.ok:hover{background:#4caf5012}
+#code-out{flex:1;overflow:auto;padding:14px 16px;font-size:11.5px;line-height:1.8;color:#cdd6f4;white-space:pre;font-family:'Consolas','Courier New',monospace}
+.kw{color:#cba6f7}.fn{color:#89b4fa}.str{color:#a6e3a1}.num{color:#fab387}.cmt{color:#41415e;font-style:italic}.pp{color:#f38ba8}.tp{color:#f9e2af}
+
+/* igwin resize handle */
+#igwin-rsz{position:absolute;right:0;bottom:0;width:11px;height:11px;cursor:se-resize;color:#222244;font-size:9px;display:flex;align-items:center;justify-content:center}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1e1e3a;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <h1>⚡ ImGui Menu Builder <span class="hbadge">v3</span></h1>
+  <div class="hdiv"></div>
+  <button class="hb" id="h-save">💾 Save</button>
+  <button class="hb" id="h-load">📂 Load</button>
+  <input type="file" id="h-load-in" accept=".json" style="display:none">
+  <div class="hdiv"></div>
+  <button class="hb" id="h-undo">↩ Undo</button>
+  <button class="hb" id="h-redo">↪ Redo</button>
+  <div id="hflex"></div>
+  <button class="hb ok" id="h-export">⬇ Export HTML</button>
+</div>
+
+<!-- LAYOUT BAR -->
+<div id="layout-bar">
+  <label>Layout:</label>
+  <button class="lbtn act" data-layout="side"><span class="li">☰</span> Side Menu</button>
+  <button class="lbtn" data-layout="top"><span class="li">⊟</span> Top Tabs</button>
+  <button class="lbtn" data-layout="classic"><span class="li">□</span> Classic</button>
+  <div class="hdiv"></div>
+  <label>Title:</label>
+  <input class="ws" id="ws-title" value="Mod Menu" style="width:100px">
+  <label>W×H:</label>
+  <input class="ws" id="ws-w" type="number" value="620" style="width:48px">
+  <span style="color:var(--txt2)">×</span>
+  <input class="ws" id="ws-h" type="number" value="420" style="width:48px">
+  <label>Nav W:</label>
+  <input class="ws" id="ws-navw" type="number" value="140" style="width:50px">
+  <div id="lbar-right">
+    <label>Accent:</label>
+    <input class="ws" id="ws-c1" type="color" value="#533483" style="width:28px;height:22px;padding:1px;cursor:pointer">
+    <input class="ws" id="ws-c2" type="color" value="#e94560" style="width:28px;height:22px;padding:1px;cursor:pointer">
+    <button class="tb primary" id="btn-code">&lt;/&gt; Generate C++</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <div id="sb">
+    <input id="sb-search" type="text" placeholder="🔍 Search widget...">
+    <div class="sb-tabs">
+      <div class="sb-tab act" data-sbtab="widgets">Widgets</div>
+      <div class="sb-tab" data-sbtab="nav">Nav Tree</div>
+      <div class="sb-tab" data-sbtab="style">Style</div>
+    </div>
+    <!-- Widgets panel -->
+    <div class="sb-panel" id="sbp-widgets">
+      <div class="cat-lbl">Basic</div>
+      <div class="wi" draggable="true" data-type="Button"><span class="ic">▶</span>Button</div>
+      <div class="wi" draggable="true" data-type="Checkbox"><span class="ic">☑</span>Checkbox</div>
+      <div class="wi" draggable="true" data-type="RadioButton"><span class="ic">◉</span>Radio Button</div>
+      <div class="wi" draggable="true" data-type="Text"><span class="ic">T</span>Text</div>
+      <div class="wi" draggable="true" data-type="ColoredText"><span class="ic">T</span>Colored Text</div>
+      <div class="wi" draggable="true" data-type="BulletText"><span class="ic">•</span>Bullet Text</div>
+      <div class="cat-lbl">Input</div>
+      <div class="wi" draggable="true" data-type="SliderFloat"><span class="ic">↔</span>Slider Float</div>
+      <div class="wi" draggable="true" data-type="SliderInt"><span class="ic">↔</span>Slider Int</div>
+      <div class="wi" draggable="true" data-type="DragFloat"><span class="ic">↕</span>Drag Float</div>
+      <div class="wi" draggable="true" data-type="InputText"><span class="ic">✏</span>Input Text</div>
+      <div class="wi" draggable="true" data-type="Combo"><span class="ic">▼</span>Combo</div>
+      <div class="wi" draggable="true" data-type="ColorEdit3"><span class="ic">🎨</span>Color Edit</div>
+      <div class="cat-lbl">Visual</div>
+      <div class="wi" draggable="true" data-type="ProgressBar"><span class="ic">█</span>Progress Bar</div>
+      <div class="wi" draggable="true" data-type="Separator"><span class="ic">—</span>Separator</div>
+      <div class="wi" draggable="true" data-type="Spacing"><span class="ic">↕</span>Spacing</div>
+      <div class="wi" draggable="true" data-type="SameLine"><span class="ic">⟺</span>SameLine</div>
+      <div class="cat-lbl">Special</div>
+      <div class="wi" draggable="true" data-type="Hotkey"><span class="ic">⌨</span>Hotkey</div>
+      <div class="wi" draggable="true" data-type="Tooltip"><span class="ic">?</span>Tooltip</div>
+      <div class="wi" draggable="true" data-type="TabBar"><span class="ic">⊟</span>Tab Bar</div>
+      <div class="wi" draggable="true" data-type="CustomCode"><span class="ic">{}</span>Custom Code</div>
+    </div>
+    <!-- Nav panel -->
+    <div class="sb-panel hidden" id="sbp-nav">
+      <div class="nav-section-lbl">Categories</div>
+      <div id="nav-ed-tree"></div>
+      <button class="nav-add-btn" id="nav-add-cat">+ Add Category</button>
+      <div class="nav-section-lbl" style="margin-top:8px">Content Sections</div>
+      <div style="font-size:10px;color:var(--txt2);line-height:1.5">Select a nav item, then add sections to its content area.</div>
+      <button class="nav-add-btn" id="nav-add-sec" style="margin-top:6px">+ Add Section to Active Nav</button>
+    </div>
+    <!-- Style panel -->
+    <div class="sb-panel hidden" id="sbp-style">
+      <div class="pl" style="margin-top:4px">Presets</div>
+      <div class="preset-grid" id="preset-grid"></div>
+      <div class="phr"></div>
+      <div class="pl">Nav Width</div>
+      <input class="pi" type="number" id="style-navw" value="140">
+      <div class="pg" style="margin-top:8px">
+        <div class="pl">Font Scale</div>
+        <select class="pi" id="style-fontscale">
+          <option value="0.85">Small (0.85)</option>
+          <option value="1.0" selected>Normal (1.0)</option>
+          <option value="1.1">Large (1.1)</option>
+          <option value="1.2">XL (1.2)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS AREA -->
+  <div id="canvas-area">
+    <div id="toolbar">
+      <button class="tb danger" id="tb-clr">🗑 Clear</button>
+      <div style="width:1px;height:14px;background:var(--bdr)"></div>
+      <button class="tb" id="tb-dup" title="Ctrl+D">⧉ Dup</button>
+      <button class="tb" id="tb-up">↑</button>
+      <button class="tb" id="tb-dn">↓</button>
+      <button class="tb danger" id="tb-del" title="Del">✕ Del</button>
+      <div id="tsep"></div>
+      <span style="font-size:10px;color:var(--txt2)">Del • Ctrl+D • Ctrl+Z/Y</span>
+    </div>
+    <div id="canvas">
+      <div id="igwin" style="left:20px;top:15px">
+        <div id="igwin-tb">
+          <span class="wt" id="win-title-disp">Mod Menu</span>
+          <span class="wx">×</span>
+        </div>
+        <div id="igwin-body">
+          <!-- rendered by JS -->
+        </div>
+        <div id="igwin-rsz">◢</div>
+      </div>
+    </div>
+    <div id="code-panel">
+      <div id="code-tabs">
+        <div class="ctab act" data-ctab="render">RenderMenu()</div>
+        <div class="ctab" data-ctab="style">ApplyStyle()</div>
+        <div class="ctab" data-ctab="hook">Hook Template</div>
+        <div id="code-acts">
+          <button class="cabtn ok" id="cb-copy">📋 Copy</button>
+          <button class="cabtn" id="cb-close">✕ Close</button>
+        </div>
+      </div>
+      <div id="code-out"></div>
+    </div>
+  </div>
+
+  <!-- PROPS -->
+  <div id="props">
+    <div id="props-hdr">⚙ Properties</div>
+    <div id="props-body">
+      <p style="color:var(--txt2);font-size:11px;line-height:1.7">Click a widget or section<br>to edit properties.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let idN = 0;
+const uid = () => 'i' + (++idN);
+
+const PROJ = {
+  layout: 'side',
+  navItems: [
+    { id: 'n1', name: 'Aimbot', icon: '🎯', expanded: true,
+      subs: [{id:'n1s1', name:'Player'}, {id:'n1s2', name:'Triggerbot'}] },
+    { id: 'n2', name: 'Visuals', icon: '👁', expanded: false,
+      subs: [{id:'n2s1', name:'Players'}, {id:'n2s2', name:'World'}] },
+    { id: 'n3', name: 'Misc', icon: '⚙', expanded: false,
+      subs: [{id:'n3s1', name:'Lists'}, {id:'n3s2', name:'Configs'}] },
+  ],
+  activeNavId: 'n1',
+  navSections: {
+    'n1': [
+      { id:'sec1', title:'Aimbot', hasToggle:true, toggleVar:'bAimbot', toggleOn:true, collapsed:false,
+        widgets:[
+          {uid:uid(),type:'Hotkey',label:'Hotkey',var:'bAimbot',key:'Mouse 2'},
+          {uid:uid(),type:'Checkbox',label:'Target Peds',var:'bTargetPeds',def:true},
+          {uid:uid(),type:'Checkbox',label:'Visible Check',var:'bVisCheck',def:true},
+          {uid:uid(),type:'SliderFloat',label:'FOV',var:'fFOV',min:0,max:180,def:90,fmt:'%.0f'},
+          {uid:uid(),type:'SliderFloat',label:'Smooth',var:'fSmooth',min:0,max:10,def:3,fmt:'%.1f'},
+        ]},
+      { id:'sec2', title:'Triggerbot', hasToggle:true, toggleVar:'bTrigger', toggleOn:true, collapsed:false,
+        widgets:[
+          {uid:uid(),type:'Checkbox',label:'Use Hotkey',var:'bTrigHotkey',def:true},
+          {uid:uid(),type:'Hotkey',label:'Key',var:'bTrigger',key:'Mouse 2'},
+          {uid:uid(),type:'Checkbox',label:'Target Players',var:'bTrigPlayers',def:true},
+          {uid:uid(),type:'SliderFloat',label:'Delay',var:'fDelay',min:0,max:500,def:80,fmt:'%.0f ms'},
+        ]},
+    ],
+    'n1s1': [],
+    'n1s2': [],
+    'n2': [
+      { id:'sec3', title:'ESP Players', hasToggle:true, toggleVar:'bESP', toggleOn:false, collapsed:false,
+        widgets:[
+          {uid:uid(),type:'Checkbox',label:'Box ESP',var:'bBox',def:true},
+          {uid:uid(),type:'Checkbox',label:'Name ESP',var:'bName',def:true},
+          {uid:uid(),type:'ColorEdit3',label:'Color',var:'vESPColor'},
+        ]},
+    ],
+    'n2s1':[], 'n2s2':[], 'n3':[], 'n3s1':[], 'n3s2':[],
+  },
+  classicWidgets: [],
+  sel: { secId: null, widgetUid: null },
+};
+
+const HISTORY = [], FUTURE = [];
+function snap() {
+  HISTORY.push(JSON.stringify({navItems:PROJ.navItems,navSections:PROJ.navSections,classicWidgets:PROJ.classicWidgets}));
+  if(HISTORY.length>50)HISTORY.shift();
+  FUTURE.length=0;
+}
+function undo() {
+  if(!HISTORY.length)return;
+  FUTURE.push(JSON.stringify({navItems:PROJ.navItems,navSections:PROJ.navSections,classicWidgets:PROJ.classicWidgets}));
+  const s=JSON.parse(HISTORY.pop());
+  Object.assign(PROJ,s); PROJ.sel={secId:null,widgetUid:null}; fullRender();
+}
+function redo() {
+  if(!FUTURE.length)return;
+  HISTORY.push(JSON.stringify({navItems:PROJ.navItems,navSections:PROJ.navSections,classicWidgets:PROJ.classicWidgets}));
+  const s=JSON.parse(FUTURE.pop());
+  Object.assign(PROJ,s); PROJ.sel={secId:null,widgetUid:null}; fullRender();
+}
+
+/* ══════════════════════════════════════════════════════
+   WIDGET DEFAULTS
+══════════════════════════════════════════════════════ */
+const DEF = {
+  Button:      {label:'Click Me',id:'btn1',w:0,h:0},
+  Checkbox:    {label:'Enable',var:'bEnabled',def:false},
+  RadioButton: {label:'Option',var:'nOpt',val:0},
+  Text:        {text:'Text here'},
+  ColoredText: {text:'Colored!',r:255,g:80,b:80,a:255},
+  BulletText:  {text:'Info'},
+  SliderFloat: {label:'Value',var:'fVal',min:0,max:100,def:50,fmt:'%.1f'},
+  SliderInt:   {label:'Value',var:'nVal',min:0,max:100,def:50},
+  DragFloat:   {label:'Value',var:'fDrag',speed:0.1,min:0,max:0,def:0,fmt:'%.2f'},
+  InputText:   {label:'Input',var:'szBuf',size:128,hint:''},
+  Combo:       {label:'Mode',var:'nMode',items:'Normal,Aimbot,Rage'},
+  ColorEdit3:  {label:'Color',var:'vColor'},
+  ProgressBar: {label:'',var:'fProg',def:0.5,overlay:''},
+  Separator:   {},
+  Spacing:     {count:1},
+  SameLine:    {spacing:0},
+  Hotkey:      {label:'Key',var:'bToggle',key:'VK_INSERT'},
+  Tooltip:     {text:'Tooltip text'},
+  TabBar:      {id:'tb1',tabs:'Tab A,Tab B'},
+  CustomCode:  {code:'// custom code'},
+};
+function mkw(type){ return {uid:uid(),type,...JSON.parse(JSON.stringify(DEF[type]||{}))} }
+
+/* ══════════════════════════════════════════════════════
+   CURRENT SECTIONS helper
+══════════════════════════════════════════════════════ */
+function activeSections() {
+  if(PROJ.layout==='classic') return null;
+  const id = PROJ.activeNavId;
+  if(!PROJ.navSections[id]) PROJ.navSections[id]=[];
+  return PROJ.navSections[id];
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER PREVIEW
+══════════════════════════════════════════════════════ */
+const igbody = document.getElementById('igwin-body');
+const igwin  = document.getElementById('igwin');
+
+function fullRender() {
+  applyWinSize();
+  renderIgBody();
+  renderNavEditor();
+  renderProps();
+}
+
+function applyWinSize() {
+  const w = +document.getElementById('ws-w').value||620;
+  const h = +document.getElementById('ws-h').value||420;
+  igwin.style.width  = w+'px';
+  igwin.style.height = h+'px';
+  igbody.style.height= (h-28)+'px';
+}
+
+function renderIgBody() {
+  igbody.innerHTML='';
+  const layout = PROJ.layout;
+  if(layout==='side') renderSideLayout();
+  else if(layout==='top') renderTopLayout();
+  else renderClassicLayout();
+}
+
+function renderSideLayout() {
+  const navW = +document.getElementById('ws-navw').value||140;
+  const nav = document.createElement('div');
+  nav.id='nav-pane'; nav.style.width=navW+'px';
+  PROJ.navItems.forEach(cat=>{
+    const isAct = cat.id===PROJ.activeNavId || cat.subs.some(s=>s.id===PROJ.activeNavId);
+    const ce=document.createElement('div');
+    ce.className='nav-cat'+(cat.id===PROJ.activeNavId?' act':'');
+    ce.innerHTML=`<span class="nc-arr">${cat.expanded?'▾':'▸'}</span><span class="nc-ic">${cat.icon||''}</span>${esc(cat.name)}`;
+    ce.onclick=e=>{e.stopPropagation();PROJ.activeNavId=cat.id;cat.expanded=!cat.expanded;renderIgBody();renderNavEditor();renderProps();};
+    nav.appendChild(ce);
+    if(cat.expanded){
+      cat.subs.forEach(sub=>{
+        const se=document.createElement('div');
+        se.className='nav-sub'+(sub.id===PROJ.activeNavId?' act':'');
+        se.textContent=sub.name;
+        se.onclick=e=>{e.stopPropagation();PROJ.activeNavId=sub.id;renderIgBody();renderProps();};
+        nav.appendChild(se);
+      });
+    }
+  });
+  igbody.appendChild(nav);
+  const cp=document.createElement('div');
+  cp.id='content-pane';
+  renderSections(cp);
+  igbody.appendChild(cp);
+}
+
+function renderTopLayout() {
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow:hidden';
+  const tb=document.createElement('div');
+  tb.id='top-tabbar';
+  PROJ.navItems.forEach(cat=>{
+    cat.subs.forEach((sub,si)=>{
+      const t=document.createElement('div');
+      t.className='top-tab'+(sub.id===PROJ.activeNavId?' act':'');
+      t.textContent=sub.name;
+      t.onclick=()=>{PROJ.activeNavId=sub.id;renderIgBody();renderProps();};
+      tb.appendChild(t);
+    });
+    const t=document.createElement('div');
+    t.className='top-tab'+(cat.id===PROJ.activeNavId?' act':'');
+    t.textContent=cat.name;
+    t.onclick=()=>{PROJ.activeNavId=cat.id;renderIgBody();renderProps();};
+    tb.insertBefore(t,tb.firstChild);
+  });
+  wrap.appendChild(tb);
+  const cp=document.createElement('div');
+  cp.id='top-content-pane';
+  renderSections(cp);
+  wrap.appendChild(cp);
+  igbody.appendChild(wrap);
+}
+
+function renderClassicLayout() {
+  const pane=document.createElement('div');
+  pane.id='classic-pane';
+  renderClassicWidgets(pane);
+  igbody.appendChild(pane);
+}
+
+function renderClassicWidgets(container) {
+  PROJ.classicWidgets.forEach((w,i)=>{
+    if(PROJ._classicDrop===i) container.appendChild(mkDropInd());
+    const el=mkWitem(w);
+    container.appendChild(el);
+  });
+  if(PROJ._classicDrop===PROJ.classicWidgets.length) container.appendChild(mkDropInd());
+  // drop zone at end
+  container.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const els=[...container.querySelectorAll('.witem')];
+    let idx=PROJ.classicWidgets.length;
+    for(let i=0;i<els.length;i++)if(e.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
+    if(PROJ._classicDrop!==idx){PROJ._classicDrop=idx;renderIgBody();}
+  });
+  container.addEventListener('dragleave',e=>{if(!container.contains(e.relatedTarget)){PROJ._classicDrop=null;renderIgBody();}});
+  container.addEventListener('drop',e=>{
+    e.preventDefault();
+    if(DRAGGING_TYPE){
+      snap();
+      const idx=PROJ._classicDrop??PROJ.classicWidgets.length;
+      PROJ.classicWidgets.splice(idx,0,mkw(DRAGGING_TYPE));
+    }
+    DRAGGING_TYPE=null;PROJ._classicDrop=null;renderIgBody();
+  });
+}
+
+function renderSections(container) {
+  const secs = activeSections();
+  if(!secs){ container.innerHTML='<div class="sec-empty">No sections for this nav item</div>'; return; }
+  if(!secs.length){
+    const e=document.createElement('div');
+    e.className='sec-empty';e.textContent='No sections. Add one in the Nav tab.';
+    container.appendChild(e);
+  }
+  secs.forEach((sec,si)=>{
+    const card=document.createElement('div');
+    card.className='section-card'+(PROJ.sel.secId===sec.id?' selected-sec':'');
+    // Header
+    const hdr=document.createElement('div');
+    hdr.className='sec-hdr';
+    const title=document.createElement('span');
+    title.className='sec-hdr-title';title.textContent='['+sec.title+']';
+    hdr.appendChild(title);
+    if(sec.hasToggle){
+      const tog=document.createElement('span');
+      tog.className='sec-toggle '+(sec.toggleOn?'on':'off');
+      tog.textContent=sec.toggleOn?'ON':'OFF';
+      tog.onclick=e=>{e.stopPropagation();snap();sec.toggleOn=!sec.toggleOn;renderIgBody();};
+      hdr.appendChild(tog);
+    }
+    const arr=document.createElement('span');
+    arr.className='sec-arr';arr.textContent=sec.collapsed?'▶':'▼';
+    hdr.appendChild(arr);
+    hdr.onclick=()=>{
+      PROJ.sel.secId=sec.id;PROJ.sel.widgetUid=null;
+      if(document.pointerType!==undefined)sec.collapsed=!sec.collapsed;
+      renderIgBody();renderProps();
+    };
+    card.appendChild(hdr);
+    // Body
+    if(!sec.collapsed){
+      const body=document.createElement('div');
+      body.className='sec-body';
+      sec.widgets.forEach((w,wi)=>{
+        if(sec._drop===wi) body.appendChild(mkDropInd());
+        const el=mkWitem(w,sec);
+        body.appendChild(el);
+      });
+      if(sec._drop===sec.widgets.length) body.appendChild(mkDropInd());
+      // Drop handling
+      body.addEventListener('dragover',e=>{
+        e.preventDefault();e.stopPropagation();
+        const els=[...body.querySelectorAll('.witem')];
+        let idx=sec.widgets.length;
+        for(let i=0;i<els.length;i++)if(e.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
+        if(sec._drop!==idx){sec._drop=idx;renderIgBody();}
+      });
+      body.addEventListener('dragleave',e=>{if(!body.contains(e.relatedTarget)){sec._drop=null;renderIgBody();}});
+      body.addEventListener('drop',e=>{
+        e.preventDefault();e.stopPropagation();
+        if(DRAGGING_TYPE){
+          snap();
+          const idx=sec._drop??sec.widgets.length;
+          sec.widgets.splice(idx,0,mkw(DRAGGING_TYPE));
+          PROJ.sel.secId=sec.id;
+        }
+        DRAGGING_TYPE=null;sec._drop=null;renderIgBody();renderProps();
+      });
+      card.appendChild(body);
+    }
+    container.appendChild(card);
+  });
+}
+
+function mkDropInd(){
+  const d=document.createElement('div');
+  d.className='drop-ind';d.textContent='+ drop here';return d;
+}
+
+function mkWitem(w,sec){
+  const el=document.createElement('div');
+  el.className='witem'+(PROJ.sel.widgetUid===w.uid?' sel':'');
+  el.innerHTML=rwHTML(w)+'<span class="wdh">⠿</span>';
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    PROJ.sel.widgetUid=w.uid;
+    PROJ.sel.secId=sec?sec.id:null;
+    renderIgBody();renderProps();
+  });
+  if(sec){
+    el.querySelector('.wdh').addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const si=sec.widgets.indexOf(w);
+      startWidgetReorder(e,sec,si);
+    });
+  }
+  return el;
+}
+
+/* ══════════════════════════════════════════════════════
+   INLINE WIDGET RENDER
+══════════════════════════════════════════════════════ */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function sfill(def,min,max){const r=max-min;const p=r?Math.min(100,Math.max(0,Math.round(((def-min)/r)*100))):50;return `<div class="iw-bar"><div class="iw-fill" style="width:${p}%"></div></div>`;}
+
+function rwHTML(w) {
+  switch(w.type){
+    case 'Button':      return `<span class="iw-btn">${esc(w.label)}</span>`;
+    case 'Checkbox':    return `<span class="iw-chk"><span class="iw-chkbox">${w.def?'✓':''}</span>${esc(w.label)}</span>`;
+    case 'RadioButton': return `<span class="iw-chk"><span class="iw-chkbox" style="border-radius:50%"></span>${esc(w.label)}</span>`;
+    case 'Text':        return `<span class="iw-txt">${esc(w.text)}</span>`;
+    case 'ColoredText': return `<span style="font-size:10px;color:rgba(${w.r||255},${w.g||80},${w.b||80},${((w.a||255)/255).toFixed(1)})">${esc(w.text)}</span>`;
+    case 'BulletText':  return `<span class="iw-txt">• ${esc(w.text)}</span>`;
+    case 'SliderFloat': return `<div class="iw-sld"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}</span>${sfill(w.def,w.min,w.max)}<span style="min-width:35px;text-align:right">${(+w.def).toFixed(1)}</span></div>`;
+    case 'SliderInt':   return `<div class="iw-sld"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}</span>${sfill(w.def,w.min,w.max)}<span style="min-width:35px;text-align:right">${w.def}</span></div>`;
+    case 'DragFloat':   return `<div class="iw-sld"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}</span><span class="iw-cbox" style="min-width:50px">${(+w.def).toFixed(2)}</span></div>`;
+    case 'InputText':   return `<div class="iw-inp"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}</span><span class="iw-ibox">${esc(w.hint||'')}</span></div>`;
+    case 'Combo':       return `<div class="iw-combo"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}</span><span class="iw-cbox">${esc((w.items||'').split(',')[0])} <span style="color:#444">▼</span></span></div>`;
+    case 'ColorEdit3':  return `<div class="iw-combo"><span style="width:16px;height:10px;background:rgb(100,140,255);border:1px solid #333;display:inline-block;flex-shrink:0"></span><span style="margin-left:5px;font-size:10px;color:#aaa">${esc(w.label)}</span></div>`;
+    case 'ProgressBar': {const p=Math.round((+w.def)*100);return `<div class="iw-prog">${w.label?`<span style="min-width:40px;flex-shrink:0">${esc(w.label)}</span>`:''}<div class="iw-pbar"><div class="iw-pfill" style="width:${p}%"></div></div><span style="min-width:32px;text-align:right">${p}%</span></div>`;}
+    case 'Separator':   return `<div class="iw-sep"></div>`;
+    case 'Spacing':     return `<span style="color:#1e1e3a;font-size:9px">↕ ×${w.count}</span>`;
+    case 'SameLine':    return `<span style="color:#1e1e3a;font-size:9px">⟺ SameLine</span>`;
+    case 'Hotkey':      return `<div class="iw-hotkey"><span style="min-width:55px;flex-shrink:0">${esc(w.label)}:</span><span class="iw-hkbox">${esc(w.key)}</span></div>`;
+    case 'Tooltip':     return `<span style="font-size:9px;color:#222244;font-style:italic">[?] ${esc(w.text)}</span>`;
+    case 'TabBar':      {const tabs=(w.tabs||'').split(',');return `<div><div class="iw-tab-bar">${tabs.map((t,i)=>`<div class="iw-tab${i===0?' a':''}">${esc(t.trim())}</div>`).join('')}</div></div>`;}
+    case 'CustomCode':  return `<span style="font-size:9px;color:#333355;font-family:monospace">${esc(w.code||'')}</span>`;
+    default: return `<span class="iw-txt">${w.type}</span>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   NAV EDITOR (sidebar)
+══════════════════════════════════════════════════════ */
+function renderNavEditor(){
+  const tree=document.getElementById('nav-ed-tree');
+  tree.innerHTML='';
+  PROJ.navItems.forEach((cat,ci)=>{
+    const row=document.createElement('div');
+    row.className='nav-ed-item';
+    const inp=document.createElement('input');inp.value=cat.name;
+    inp.addEventListener('input',e=>{snap();cat.name=e.target.value;renderIgBody();});
+    const del=document.createElement('button');del.className='nav-ed-del';del.textContent='✕';
+    del.onclick=()=>{snap();PROJ.navItems.splice(ci,1);PROJ.activeNavId=PROJ.navItems[0]?.id||'';fullRender();};
+    const add=document.createElement('button');add.style.cssText='background:none;border:1px dashed var(--bdr);color:var(--txt2);padding:2px 5px;border-radius:2px;cursor:pointer;font-size:9px;font-family:monospace;transition:.1s';
+    add.textContent='+sub';add.onclick=()=>{snap();const sub={id:uid(),name:'Sub'};cat.subs.push(sub);if(!PROJ.navSections[sub.id])PROJ.navSections[sub.id]=[];fullRender();};
+    row.append(inp,add,del);tree.appendChild(row);
+    // subs
+    const subWrap=document.createElement('div');subWrap.className='nav-ed-sub';
+    cat.subs.forEach((sub,si)=>{
+      const sr=document.createElement('div');sr.className='nav-ed-item';
+      const si2=document.createElement('input');si2.value=sub.name;
+      si2.addEventListener('input',e=>{snap();sub.name=e.target.value;renderIgBody();});
+      const sd=document.createElement('button');sd.className='nav-ed-del';sd.textContent='✕';
+      sd.onclick=()=>{snap();cat.subs.splice(si,1);fullRender();};
+      sr.append(si2,sd);subWrap.appendChild(sr);
+    });
+    tree.appendChild(subWrap);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   DRAG FROM SIDEBAR
+══════════════════════════════════════════════════════ */
+let DRAGGING_TYPE = null;
+document.querySelectorAll('.wi').forEach(el=>{
+  el.addEventListener('dragstart',()=>DRAGGING_TYPE=el.dataset.type);
+  el.addEventListener('dragend',()=>{
+    DRAGGING_TYPE=null;
+    // clear all drops
+    if(PROJ.navSections){Object.values(PROJ.navSections).forEach(secs=>secs.forEach(s=>s._drop=null));}
+    PROJ._classicDrop=null;
+    renderIgBody();
+  });
+});
+
+/* ══════════════════════════════════════════════════════
+   WIDGET REORDER
+══════════════════════════════════════════════════════ */
+function startWidgetReorder(e,sec,srcIdx){
+  const onMove=ev=>{
+    const container=document.querySelector('.sec-body');
+    if(!container)return;
+    const els=[...container.querySelectorAll('.witem')];
+    let idx=sec.widgets.length;
+    for(let i=0;i<els.length;i++)if(ev.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
+    if(sec._drop!==idx){sec._drop=idx;renderIgBody();}
+  };
+  const onUp=()=>{
+    if(sec._drop!==null&&sec._drop!==undefined){
+      snap();let dst=sec._drop;if(dst>srcIdx)dst--;
+      const [w]=sec.widgets.splice(srcIdx,1);sec.widgets.splice(dst,0,w);
+    }
+    sec._drop=null;renderIgBody();
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+  };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+/* ══════════════════════════════════════════════════════
+   PROPERTIES PANEL
+══════════════════════════════════════════════════════ */
+const propsBody=document.getElementById('props-body');
+function renderProps(){
+  // Widget selected?
+  if(PROJ.sel.widgetUid){
+    const secs=activeSections();
+    let w=null,sec=null;
+    if(secs){for(const s of secs){const f=s.widgets.find(x=>x.uid===PROJ.sel.widgetUid);if(f){w=f;sec=s;break;}}}
+    else{w=PROJ.classicWidgets.find(x=>x.uid===PROJ.sel.widgetUid);}
+    if(w){renderWidgetProps(w,sec);return;}
+  }
+  // Section selected?
+  if(PROJ.sel.secId){
+    const secs=activeSections();
+    const sec=secs&&secs.find(s=>s.id===PROJ.sel.secId);
+    if(sec){renderSectionProps(sec);return;}
+  }
+  // Default
+  propsBody.innerHTML=`<p style="color:var(--txt2);font-size:11px;line-height:1.7">Click a widget or section<br>to edit properties.</p>`;
+}
+
+const WPF = {
+  Button:      [{k:'label',l:'Label',t:'text'},{k:'id',l:'ID',t:'text'},{k:'w',l:'Width (0=auto)',t:'num'},{k:'h',l:'Height',t:'num'}],
+  Checkbox:    [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'def',l:'Default',t:'bool'}],
+  RadioButton: [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'val',l:'Value (int)',t:'num'}],
+  Text:        [{k:'text',l:'Text',t:'text'}],
+  ColoredText: [{k:'text',l:'Text',t:'text'},{k:'r',l:'R',t:'num'},{k:'g',l:'G',t:'num'},{k:'b',l:'B',t:'num'},{k:'a',l:'A',t:'num'}],
+  BulletText:  [{k:'text',l:'Text',t:'text'}],
+  SliderFloat: [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'min',l:'Min',t:'num'},{k:'max',l:'Max',t:'num'},{k:'def',l:'Default',t:'num'},{k:'fmt',l:'Format',t:'text'}],
+  SliderInt:   [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'min',l:'Min',t:'num'},{k:'max',l:'Max',t:'num'},{k:'def',l:'Default',t:'num'}],
+  DragFloat:   [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'speed',l:'Speed',t:'num'},{k:'def',l:'Default',t:'num'},{k:'fmt',l:'Format',t:'text'}],
+  InputText:   [{k:'label',l:'Label',t:'text'},{k:'var',l:'Buffer',t:'text'},{k:'size',l:'Buffer Size',t:'num'},{k:'hint',l:'Hint',t:'text'}],
+  Combo:       [{k:'label',l:'Label',t:'text'},{k:'var',l:'Index Var',t:'text'},{k:'items',l:'Items (comma)',t:'text'}],
+  ColorEdit3:  [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'}],
+  ProgressBar: [{k:'label',l:'Label',t:'text'},{k:'var',l:'Variable',t:'text'},{k:'def',l:'Preview (0-1)',t:'num'},{k:'overlay',l:'Overlay Text',t:'text'}],
+  Spacing:     [{k:'count',l:'Count',t:'num'}],
+  SameLine:    [{k:'spacing',l:'Spacing',t:'num'}],
+  Hotkey:      [{k:'label',l:'Label',t:'text'},{k:'var',l:'Toggle Var',t:'text'},{k:'key',l:'Key',t:'text'}],
+  Tooltip:     [{k:'text',l:'Tooltip Text',t:'text'}],
+  TabBar:      [{k:'id',l:'TabBar ID',t:'text'},{k:'tabs',l:'Tabs (comma)',t:'text'}],
+  CustomCode:  [{k:'code',l:'Code',t:'area'}],
+};
+
+function renderWidgetProps(w,sec){
+  const fields=WPF[w.type]||[];
+  propsBody.innerHTML=`
+    <div style="color:var(--acc);font-size:11px;font-weight:600;padding-bottom:8px;border-bottom:1px solid var(--bdr);margin-bottom:10px">${w.type}</div>
+    ${fields.map(f=>{
+      if(f.t==='bool')return`<div class="pg"><label class="pi-chk"><input type="checkbox" data-k="${f.k}" ${w[f.k]?'checked':''}> ${f.l}</label></div>`;
+      if(f.t==='area')return`<div class="pg"><div class="pl">${f.l}</div><textarea class="pi" rows="4" data-k="${f.k}" style="resize:vertical">${esc(String(w[f.k]||''))}</textarea></div>`;
+      return`<div class="pg"><div class="pl">${f.l}</div><input class="pi" type="${f.t==='num'?'number':'text'}" data-k="${f.k}" value="${esc(String(w[f.k]??''))}"></div>`;
+    }).join('')}
+    <div class="action-row">
+      <button class="action-btn" onclick="dupWidget()">⧉ Dup</button>
+      <button class="action-btn del" onclick="delWidget()">✕ Del</button>
+    </div>`;
+  propsBody.querySelectorAll('[data-k]').forEach(el=>{
+    el.addEventListener('input',e2=>{
+      const k=e2.target.dataset.k;
+      w[k]=e2.target.type==='checkbox'?e2.target.checked:(e2.target.type==='number'?parseFloat(e2.target.value)||0:e2.target.value);
+      renderIgBody();
+    });
+    el.addEventListener('change',()=>snap());
+  });
+}
+
+function renderSectionProps(sec){
+  propsBody.innerHTML=`
+    <div style="color:var(--acc);font-size:11px;font-weight:600;padding-bottom:8px;border-bottom:1px solid var(--bdr);margin-bottom:10px">Section Card</div>
+    <div class="pg"><div class="pl">Section Title</div><input class="pi" id="sp-title" value="${esc(sec.title)}"></div>
+    <div class="pg"><label class="pi-chk"><input type="checkbox" id="sp-tog" ${sec.hasToggle?'checked':''}> Show ON/OFF Toggle</label></div>
+    <div class="pg"><div class="pl">Toggle Variable</div><input class="pi" id="sp-togvar" value="${esc(sec.toggleVar||'')}"></div>
+    <div class="pg"><label class="pi-chk"><input type="checkbox" id="sp-col" ${sec.collapsed?'checked':''}> Collapsed by default</label></div>
+    <div class="action-row">
+      <button class="action-btn del" onclick="delSection()">✕ Delete Section</button>
+    </div>`;
+  document.getElementById('sp-title').addEventListener('input',e=>{snap();sec.title=e.target.value;renderIgBody();});
+  document.getElementById('sp-tog').addEventListener('change',e=>{snap();sec.hasToggle=e.target.checked;renderIgBody();});
+  document.getElementById('sp-togvar').addEventListener('input',e=>{snap();sec.toggleVar=e.target.value;});
+  document.getElementById('sp-col').addEventListener('change',e=>{snap();sec.collapsed=e.target.checked;renderIgBody();});
+}
+
+function delWidget(){
+  snap();
+  const uid=PROJ.sel.widgetUid;
+  const secs=activeSections();
+  if(secs){for(const s of secs){const i=s.widgets.findIndex(x=>x.uid===uid);if(i>=0){s.widgets.splice(i,1);break;}}}
+  else{const i=PROJ.classicWidgets.findIndex(x=>x.uid===uid);if(i>=0)PROJ.classicWidgets.splice(i,1);}
+  PROJ.sel.widgetUid=null;renderIgBody();renderProps();
+}
+function dupWidget(){
+  snap();
+  const uid=PROJ.sel.widgetUid;
+  const secs=activeSections();
+  if(secs){for(const s of secs){const i=s.widgets.findIndex(x=>x.uid===uid);if(i>=0){const c={...JSON.parse(JSON.stringify(s.widgets[i])),uid:window.uid()};s.widgets.splice(i+1,0,c);PROJ.sel.widgetUid=c.uid;break;}}}
+  renderIgBody();renderProps();
+}
+function delSection(){
+  snap();
+  const secs=activeSections();if(!secs)return;
+  const i=secs.findIndex(s=>s.id===PROJ.sel.secId);if(i>=0)secs.splice(i,1);
+  PROJ.sel.secId=null;renderIgBody();renderProps();
+}
+
+/* ══════════════════════════════════════════════════════
+   STYLE PRESETS
+══════════════════════════════════════════════════════ */
+const PRESETS={
+  purple:{name:'Purple',c1:'#533483',c2:'#e94560',bg:'0.11f,0.11f,0.18f',frame:'0.14f,0.14f,0.26f',grab:'0.60f,0.35f,0.90f',btn:'0.18f,0.12f,0.38f',btnH:'0.28f,0.20f,0.55f',chk:'0.85f,0.27f,0.38f',hdr:'0.16f,0.12f,0.32f',tab:'0.14f,0.10f,0.26f',tabA:'0.33f,0.20f,0.52f',sep:'0.20f,0.16f,0.36f',popup:'0.09f,0.09f,0.16f'},
+  red:{name:'Red/Black',c1:'#8b0000',c2:'#cc2200',bg:'0.08f,0.06f,0.06f',frame:'0.20f,0.08f,0.08f',grab:'0.80f,0.15f,0.10f',btn:'0.25f,0.08f,0.07f',btnH:'0.42f,0.12f,0.09f',chk:'0.90f,0.18f,0.08f',hdr:'0.22f,0.08f,0.07f',tab:'0.16f,0.06f,0.05f',tabA:'0.52f,0.10f,0.08f',sep:'0.28f,0.10f,0.08f',popup:'0.06f,0.05f,0.05f'},
+  blue:{name:'Cyan',c1:'#0a3d62',c2:'#0097e6',bg:'0.06f,0.10f,0.16f',frame:'0.10f,0.16f,0.26f',grab:'0.10f,0.60f,0.90f',btn:'0.08f,0.20f,0.36f',btnH:'0.12f,0.30f,0.52f',chk:'0.10f,0.70f,0.95f',hdr:'0.08f,0.18f,0.32f',tab:'0.06f,0.14f,0.26f',tabA:'0.10f,0.36f,0.62f',sep:'0.10f,0.20f,0.36f',popup:'0.05f,0.08f,0.14f'},
+  green:{name:'Matrix',c1:'#004d00',c2:'#00cc44',bg:'0.05f,0.09f,0.05f',frame:'0.08f,0.16f,0.08f',grab:'0.10f,0.80f,0.28f',btn:'0.06f,0.18f,0.07f',btnH:'0.09f,0.28f,0.11f',chk:'0.10f,0.85f,0.28f',hdr:'0.06f,0.16f,0.06f',tab:'0.05f,0.12f,0.05f',tabA:'0.08f,0.42f,0.16f',sep:'0.07f,0.18f,0.08f',popup:'0.04f,0.07f,0.04f'},
+  gold:{name:'Gold',c1:'#7d4f00',c2:'#e6ac00',bg:'0.10f,0.08f,0.04f',frame:'0.22f,0.14f,0.04f',grab:'0.85f,0.65f,0.10f',btn:'0.26f,0.16f,0.03f',btnH:'0.38f,0.26f,0.06f',chk:'0.95f,0.72f,0.10f',hdr:'0.22f,0.14f,0.04f',tab:'0.16f,0.10f,0.02f',tabA:'0.58f,0.42f,0.07f',sep:'0.26f,0.18f,0.04f',popup:'0.08f,0.06f,0.03f'},
+  mono:{name:'Mono',c1:'#222222',c2:'#888888',bg:'0.10f,0.10f,0.10f',frame:'0.18f,0.18f,0.18f',grab:'0.70f,0.70f,0.70f',btn:'0.20f,0.20f,0.20f',btnH:'0.33f,0.33f,0.33f',chk:'0.80f,0.80f,0.80f',hdr:'0.18f,0.18f,0.18f',tab:'0.14f,0.14f,0.14f',tabA:'0.44f,0.44f,0.44f',sep:'0.24f,0.24f,0.24f',popup:'0.08f,0.08f,0.08f'},
+};
+let curPreset='purple';
+
+function applyPreset(k){
+  curPreset=k;
+  const p=PRESETS[k];
+  document.getElementById('ws-c1').value=p.c1;
+  document.getElementById('ws-c2').value=p.c2;
+  updateTitlebar();
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('sel',b.dataset.preset===k));
+}
+
+function buildPresets(){
+  const g=document.getElementById('preset-grid');g.innerHTML='';
+  Object.entries(PRESETS).forEach(([k,p])=>{
+    const b=document.createElement('div');
+    b.className='pbtn'+(curPreset===k?' sel':'');
+    b.dataset.preset=k;
+    b.style.borderTopColor=p.c2;
+    b.textContent=p.name;
+    b.onclick=()=>applyPreset(k);
+    g.appendChild(b);
+  });
+}
+
+function updateTitlebar(){
+  const c1=document.getElementById('ws-c1').value;
+  const c2=document.getElementById('ws-c2').value;
+  document.getElementById('igwin-tb').style.background=`linear-gradient(90deg,${c1},${c2})`;
+}
+
+/* ══════════════════════════════════════════════════════
+   CODE GENERATION
+══════════════════════════════════════════════════════ */
+function e2(s){return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');}
+function hx(h,a='1.00f'){if(!h||h.length<7)return`0.50f, 0.50f, 0.50f, ${a}`;const r=(parseInt(h.slice(1,3),16)/255).toFixed(2),g=(parseInt(h.slice(3,5),16)/255).toFixed(2),b=(parseInt(h.slice(5,7),16)/255).toFixed(2);return`${r}f, ${g}f, ${b}f, ${a}`;}
+
+function genWidgetCode(w,indent='    '){
+  const i=indent;
+  switch(w.type){
+    case 'Button':       return `${i}<kw>if</kw> (<fn>ImGui::Button</fn>(<str>"${e2(w.label)}##${e2(w.id||'btn')}"</str>${w.w>0?`, <fn>ImVec2</fn>(${w.w}f, ${w.h||0}f)`:''}))\n${i}{\n${i}    <cmt>// TODO</cmt>\n${i}}`;
+    case 'Checkbox':     return `${i}<fn>ImGui::Checkbox</fn>(<str>"${e2(w.label)}"</str>, &${w.var||'bEnabled'});`;
+    case 'RadioButton':  return `${i}<kw>if</kw> (<fn>ImGui::RadioButton</fn>(<str>"${e2(w.label)}"</str>, ${w.var||'nOpt'} == ${w.val||0}))\n${i}    ${w.var||'nOpt'} = ${w.val||0};`;
+    case 'Text':         return `${i}<fn>ImGui::Text</fn>(<str>"${e2(w.text)}"</str>);`;
+    case 'ColoredText':  return `${i}<fn>ImGui::TextColored</fn>(<fn>ImVec4</fn>(${((w.r||255)/255).toFixed(2)}f, ${((w.g||80)/255).toFixed(2)}f, ${((w.b||80)/255).toFixed(2)}f, ${((w.a||255)/255).toFixed(2)}f), <str>"${e2(w.text)}"</str>);`;
+    case 'BulletText':   return `${i}<fn>ImGui::BulletText</fn>(<str>"${e2(w.text)}"</str>);`;
+    case 'SliderFloat':  return `${i}<fn>ImGui::SliderFloat</fn>(<str>"${e2(w.label)}"</str>, &${w.var||'fVal'}, ${(+w.min).toFixed(2)}f, ${(+w.max).toFixed(2)}f, <str>"${e2(w.fmt||'%.2f')}"</str>);`;
+    case 'SliderInt':    return `${i}<fn>ImGui::SliderInt</fn>(<str>"${e2(w.label)}"</str>, &${w.var||'nVal'}, ${w.min||0}, ${w.max||100});`;
+    case 'DragFloat':    return `${i}<fn>ImGui::DragFloat</fn>(<str>"${e2(w.label)}"</str>, &${w.var||'fDrag'}, ${(+w.speed||0.1).toFixed(2)}f, 0.0f, 0.0f, <str>"${e2(w.fmt||'%.2f')}"</str>);`;
+    case 'InputText':    return w.hint?`${i}<fn>ImGui::InputTextWithHint</fn>(<str>"${e2(w.label)}"</str>, <str>"${e2(w.hint)}"</str>, ${w.var||'szBuf'}, <kw>sizeof</kw>(${w.var||'szBuf'}));`:`${i}<fn>ImGui::InputText</fn>(<str>"${e2(w.label)}"</str>, ${w.var||'szBuf'}, <kw>sizeof</kw>(${w.var||'szBuf'}));`;
+    case 'Combo':{const items=(w.items||'Item').split(',').map(s=>s.trim());return `${i}<fn>ImGui::Combo</fn>(<str>"${e2(w.label)}"</str>, &${w.var||'nMode'}, ${w.var||'nMode'}_items, <fn>IM_ARRAYSIZE</fn>(${w.var||'nMode'}_items));`;}
+    case 'ColorEdit3':   return `${i}<fn>ImGui::ColorEdit3</fn>(<str>"${e2(w.label)}"</str>, ${w.var||'vColor'});`;
+    case 'ProgressBar':  return `${i}<fn>ImGui::ProgressBar</fn>(${w.var||'fProg'}, <fn>ImVec2</fn>(-<fn>FLT_MIN</fn>, 0)${w.overlay?`, <str>"${e2(w.overlay)}"</str>`:''});`;
+    case 'Separator':    return `${i}<fn>ImGui::Separator</fn>();`;
+    case 'Spacing':      return Array(+(w.count||1)).fill(`${i}<fn>ImGui::Spacing</fn>();`).join('\n');
+    case 'SameLine':     return `${i}<fn>ImGui::SameLine</fn>(${w.spacing>0?w.spacing+'f':''});`;
+    case 'Hotkey':       return `${i}<kw>if</kw> (<fn>GetAsyncKeyState</fn>(${e2(w.key||'VK_INSERT')}) & <num>0x1</num>)\n${i}    ${w.var||'bToggle'} = !${w.var||'bToggle'};`;
+    case 'Tooltip':      return `${i}<kw>if</kw> (<fn>ImGui::IsItemHovered</fn>())\n${i}    <fn>ImGui::SetTooltip</fn>(<str>"${e2(w.text)}"</str>);`;
+    case 'TabBar':{const tabs=(w.tabs||'A').split(',');return `${i}<kw>if</kw> (<fn>ImGui::BeginTabBar</fn>(<str>"##${e2(w.id||'tb')}"</str>))\n${i}{\n${tabs.map(t=>`${i}    <kw>if</kw> (<fn>ImGui::BeginTabItem</fn>(<str>"${e2(t.trim())}"</str>))\n${i}    {\n${i}        <cmt>// TODO: ${e2(t.trim())}</cmt>\n${i}        <fn>ImGui::EndTabItem</fn>();\n${i}    }`).join('\n')}\n${i}    <fn>ImGui::EndTabBar</fn>();\n${i}}`;}
+    case 'CustomCode':   return (w.code||'').split('\n').map(l=>`${i}${l}`).join('\n');
+    default: return `${i}<cmt>// ${w.type}</cmt>`;
+  }
+}
+
+function genVarDecls(){
+  const vars=[];
+  const allWidgets=[];
+  Object.values(PROJ.navSections).forEach(secs=>secs.forEach(sec=>{
+    if(sec.hasToggle&&sec.toggleVar) vars.push(`<kw>static</kw> <kw>bool</kw>  ${sec.toggleVar} = <kw>${sec.toggleOn?'true':'false'}</kw>;`);
+    sec.widgets.forEach(w=>allWidgets.push(w));
+  }));
+  PROJ.classicWidgets.forEach(w=>allWidgets.push(w));
+  allWidgets.forEach(w=>{
+    switch(w.type){
+      case 'Checkbox':    vars.push(`<kw>static</kw> <kw>bool</kw>  ${w.var||'bEnabled'} = <kw>${w.def?'true':'false'}</kw>;`);break;
+      case 'RadioButton': vars.push(`<kw>static</kw> <kw>int</kw>   ${w.var||'nOpt'} = <num>0</num>;`);break;
+      case 'SliderFloat': vars.push(`<kw>static</kw> <kw>float</kw> ${w.var||'fVal'} = <num>${(+w.def).toFixed(2)}f</num>;`);break;
+      case 'SliderInt':   vars.push(`<kw>static</kw> <kw>int</kw>   ${w.var||'nVal'} = <num>${w.def||0}</num>;`);break;
+      case 'DragFloat':   vars.push(`<kw>static</kw> <kw>float</kw> ${w.var||'fDrag'} = <num>${(+w.def).toFixed(2)}f</num>;`);break;
+      case 'InputText':   vars.push(`<kw>static</kw> <kw>char</kw>  ${w.var||'szBuf'}[<num>${w.size||128}</num>] = {};`);break;
+      case 'ColorEdit3':  vars.push(`<kw>static</kw> <kw>float</kw> ${w.var||'vColor'}[<num>3</num>] = { <num>1.0f, 1.0f, 1.0f</num> };`);break;
+      case 'ProgressBar': vars.push(`<kw>static</kw> <kw>float</kw> ${w.var||'fProg'} = <num>${(+w.def).toFixed(2)}f</num>;`);break;
+      case 'Hotkey':      vars.push(`<kw>static</kw> <kw>bool</kw>  ${w.var||'bToggle'} = <kw>false</kw>;`);break;
+      case 'Combo':{const items=(w.items||'Item').split(',').map(s=>s.trim());vars.push(`<kw>static</kw> <kw>int</kw>   ${w.var||'nMode'} = <num>0</num>;\n<kw>const char</kw>* ${w.var||'nMode'}_items[] = { ${items.map(s=>`<str>"${e2(s)}"</str>`).join(', ')} };`);break;}
+    }
+  });
+  return [...new Set(vars)];
+}
+
+function genNavEnumCode(){
+  const lines=[];
+  lines.push(`<kw>enum</kw> <tp>eNavTab</tp> {`);
+  PROJ.navItems.forEach(cat=>{
+    lines.push(`    <tp>TAB_${cat.name.toUpperCase().replace(/\s+/g,'_')}</tp>,`);
+    cat.subs.forEach(sub=>{
+      lines.push(`    <tp>TAB_${sub.name.toUpperCase().replace(/\s+/g,'_')}</tp>,`);
+    });
+  });
+  lines.push(`};\n<kw>static</kw> <tp>eNavTab</tp> g_Tab = <tp>TAB_${PROJ.navItems[0]?.name.toUpperCase().replace(/\s+/g,'_')||'AIMBOT'}</tp>;`);
+  return lines.join('\n');
+}
+
+function genRenderCode(){
+  const title=document.getElementById('ws-title').value||'Mod Menu';
+  const W=document.getElementById('ws-w').value||620;
+  const H=document.getElementById('ws-h').value||420;
+  const navW=document.getElementById('ws-navw').value||140;
+  const layout=PROJ.layout;
+  const vars=genVarDecls();
+
+  let body='';
+
+  if(layout==='side'){
+    const navLines=[];
+    PROJ.navItems.forEach(cat=>{
+      const tabEnum=`TAB_${cat.name.toUpperCase().replace(/\s+/g,'_')}`;
+      navLines.push(`    <kw>if</kw> (<fn>ImGui::Selectable</fn>(<str>"${e2(cat.icon||'')} ${e2(cat.name)}"</str>, g_Tab == <tp>${tabEnum}</tp>))\n        g_Tab = <tp>${tabEnum}</tp>;`);
+      cat.subs.forEach(sub=>{
+        const subEnum=`TAB_${sub.name.toUpperCase().replace(/\s+/g,'_')}`;
+        navLines.push(`    <fn>ImGui::Indent</fn>(<num>10.0f</num>);\n    <kw>if</kw> (<fn>ImGui::Selectable</fn>(<str>"${e2(sub.name)}"</str>, g_Tab == <tp>${subEnum}</tp>))\n        g_Tab = <tp>${subEnum}</tp>;\n    <fn>ImGui::Unindent</fn>(<num>10.0f</num>);`);
+      });
+    });
+
+    const contentLines=[];
+    PROJ.navItems.forEach(cat=>{
+      const tabEnum=`TAB_${cat.name.toUpperCase().replace(/\s+/g,'_')}`;
+      const secs=PROJ.navSections[cat.id]||[];
+      if(secs.length){
+        contentLines.push(`    <kw>if</kw> (g_Tab == <tp>${tabEnum}</tp>)\n    {`);
+        secs.forEach(sec=>{
+          if(sec.hasToggle&&sec.toggleVar){
+            contentLines.push(`        <cmt>// ── ${e2(sec.title)} ─────────────────────────────────</cmt>`);
+            contentLines.push(`        <fn>ImGui::PushStyleColor</fn>(<fn>ImGuiCol_Header</fn>, ${sec.toggleOn?`<fn>ImVec4</fn>(0.20f, 0.50f, 0.20f, 1.0f)`:`<fn>ImVec4</fn>(0.25f, 0.25f, 0.35f, 1.0f)`});\n        <kw>if</kw> (<fn>ImGui::CollapsingHeader</fn>(<str>"[${e2(sec.title)}]  ${sec.toggleOn?'(ON)':'(OFF)'}  ##${sec.id}"</str>))\n        {\n            <fn>ImGui::PopStyleColor</fn>();`);
+          } else {
+            contentLines.push(`        <kw>if</kw> (<fn>ImGui::CollapsingHeader</fn>(<str>"${e2(sec.title)}"</str>))\n        {`);
+          }
+          if(sec.hasToggle&&sec.toggleVar) contentLines.push(`            <fn>ImGui::Checkbox</fn>(<str>"Enable ${e2(sec.title)}"</str>, &${sec.toggleVar});`);
+          sec.widgets.forEach(w=>contentLines.push(genWidgetCode(w,'            ')));
+          contentLines.push(`        }`);
+          if(sec.hasToggle&&sec.toggleVar) contentLines.push(`        <kw>else</kw> <fn>ImGui::PopStyleColor</fn>();`);
+        });
+        contentLines.push(`    }`);
+      }
+      cat.subs.forEach(sub=>{
+        const subEnum=`TAB_${sub.name.toUpperCase().replace(/\s+/g,'_')}`;
+        const subSecs=PROJ.navSections[sub.id]||[];
+        if(subSecs.length){
+          contentLines.push(`    <kw>if</kw> (g_Tab == <tp>${subEnum}</tp>)\n    {`);
+          subSecs.forEach(sec=>{
+            contentLines.push(`        <kw>if</kw> (<fn>ImGui::CollapsingHeader</fn>(<str>"${e2(sec.title)}"</str>))\n        {`);
+            sec.widgets.forEach(w=>contentLines.push(genWidgetCode(w,'            ')));
+            contentLines.push(`        }`);
+          });
+          contentLines.push(`    }`);
+        }
+      });
+    });
+
+    body=`    <cmt>// ── Left Nav Panel ──────────────────────────────────────</cmt>
+    <fn>ImGui::PushStyleVar</fn>(<fn>ImGuiStyleVar_ItemSpacing</fn>, <fn>ImVec2</fn>(<num>0</num>, <num>2</num>));
+    <fn>ImGui::BeginChild</fn>(<str>"##Nav"</str>, <fn>ImVec2</fn>(<num>${navW}.0f</num>, <num>-1.0f</num>), <kw>false</kw>);
+    <fn>ImGui::Spacing</fn>();
+
+${navLines.join('\n\n')}
+
+    <fn>ImGui::EndChild</fn>();
+    <fn>ImGui::PopStyleVar</fn>();
+
+    <fn>ImGui::SameLine</fn>();
+    <fn>ImGui::SeparatorEx</fn>(<fn>ImGuiSeparatorFlags_Vertical</fn>);
+    <fn>ImGui::SameLine</fn>();
+
+    <cmt>// ── Content Panel ───────────────────────────────────────</cmt>
+    <fn>ImGui::BeginChild</fn>(<str>"##Content"</str>, <fn>ImVec2</fn>(<num>-1.0f</num>, <num>-1.0f</num>), <kw>false</kw>);
+
+${contentLines.join('\n\n')}
+
+    <fn>ImGui::EndChild</fn>();`;
+
+  } else if(layout==='top'){
+    const tabLines=[];
+    PROJ.navItems.forEach(cat=>{
+      const tabEnum=`TAB_${cat.name.toUpperCase().replace(/\s+/g,'_')}`;
+      tabLines.push(`        <kw>if</kw> (<fn>ImGui::BeginTabItem</fn>(<str>"${e2(cat.icon||'')} ${e2(cat.name)}"</str>))\n        {\n            <kw>if</kw> (g_Tab != <tp>${tabEnum}</tp>) g_Tab = <tp>${tabEnum}</tp>;`);
+      const secs=PROJ.navSections[cat.id]||[];
+      secs.forEach(sec=>{
+        tabLines.push(`            <kw>if</kw> (<fn>ImGui::CollapsingHeader</fn>(<str>"[${e2(sec.title)}]"</str>))\n            {`);
+        if(sec.hasToggle&&sec.toggleVar) tabLines.push(`                <fn>ImGui::Checkbox</fn>(<str>"Enable ${e2(sec.title)}"</str>, &${sec.toggleVar});`);
+        sec.widgets.forEach(w=>tabLines.push(genWidgetCode(w,'                ')));
+        tabLines.push(`            }`);
+      });
+      tabLines.push(`            <fn>ImGui::EndTabItem</fn>();\n        }`);
+    });
+    body=`    <kw>if</kw> (<fn>ImGui::BeginTabBar</fn>(<str>"##MainTabs"</str>))\n    {\n${tabLines.join('\n')}\n        <fn>ImGui::EndTabBar</fn>();\n    }`;
+
+  } else {
+    // classic
+    const lines=PROJ.classicWidgets.map(w=>genWidgetCode(w,'    ')).join('\n');
+    body=lines||`    <cmt>// Add widgets here</cmt>`;
+  }
+
+  const enumCode = (layout==='side'||layout==='top') ? `\n${genNavEnumCode()}\n` : '';
+  const varSec = vars.length ? `<cmt>// ── Variables ────────────────────────────────────────────</cmt>\n${vars.join('\n')}\n\n` : '';
+
+  return `<pp>#include</pp> <str>"imgui.h"</str>
+<pp>#include</pp> <str>&lt;Windows.h&gt;</str>
+
+<cmt>// ════════════════════════════════════════════════════════════
+//  Generated by ImGui Menu Builder v3
+//  Layout: ${layout.charAt(0).toUpperCase()+layout.slice(1)} Menu
+// ════════════════════════════════════════════════════════════</cmt>
+${enumCode}
+${varSec}<kw>void</kw> <fn>RenderMenu</fn>()
+{
+    <fn>ImGui::SetNextWindowSize</fn>(<fn>ImVec2</fn>(<num>${W}.0f</num>, <num>${H}.0f</num>), <fn>ImGuiCond_Once</fn>);
+    <fn>ImGui::SetNextWindowPos</fn>(<fn>ImVec2</fn>(<num>50.0f</num>, <num>50.0f</num>), <fn>ImGuiCond_Once</fn>);
+    <fn>ImGui::Begin</fn>(<str>"${e2(title)}"</str>);
+
+${body}
+
+    <fn>ImGui::End</fn>();
+}`;
+}
+
+function genStyleCode(){
+  const p=PRESETS[curPreset]||PRESETS.purple;
+  const c1=document.getElementById('ws-c1').value;
+  const c2=document.getElementById('ws-c2').value;
+  return `<kw>void</kw> <fn>ApplyMenuStyle</fn>()
+{
+    <kw>auto</kw>&amp; <tp>s</tp> = <fn>ImGui::GetStyle</fn>();
+    <tp>s</tp>.WindowRounding    = <num>6.0f</num>;  <tp>s</tp>.FrameRounding  = <num>4.0f</num>;
+    <tp>s</tp>.ChildRounding     = <num>4.0f</num>;  <tp>s</tp>.ScrollbarRounding = <num>4.0f</num>;
+    <tp>s</tp>.GrabRounding      = <num>3.0f</num>;  <tp>s</tp>.TabRounding    = <num>3.0f</num>;
+    <tp>s</tp>.ItemSpacing       = <fn>ImVec2</fn>(<num>8.0f</num>, <num>5.0f</num>);
+    <tp>s</tp>.WindowPadding     = <fn>ImVec2</fn>(<num>10.0f</num>, <num>10.0f</num>);
+    <tp>s</tp>.FramePadding      = <fn>ImVec2</fn>(<num>5.0f</num>, <num>3.0f</num>);
+    <tp>s</tp>.IndentSpacing     = <num>12.0f</num>;
+    <tp>s</tp>.ScrollbarSize     = <num>8.0f</num>;
+    <tp>s</tp>.WindowBorderSize  = <num>1.0f</num>;
+    <tp>s</tp>.ChildBorderSize   = <num>1.0f</num>;
+
+    <kw>auto</kw>* <tp>c</tp> = <tp>s</tp>.Colors;
+    <tp>c</tp>[<fn>ImGuiCol_WindowBg</fn>]             = <fn>ImVec4</fn>(${p.bg}, <num>0.97f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ChildBg</fn>]              = <fn>ImVec4</fn>(${p.bg}, <num>0.00f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_PopupBg</fn>]              = <fn>ImVec4</fn>(${p.popup}, <num>0.97f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_TitleBg</fn>]              = <fn>ImVec4</fn>(${hx(c1)});
+    <tp>c</tp>[<fn>ImGuiCol_TitleBgActive</fn>]        = <fn>ImVec4</fn>(${hx(c2)});
+    <tp>c</tp>[<fn>ImGuiCol_TitleBgCollapsed</fn>]     = <fn>ImVec4</fn>(${hx(c1,'0.50f')});
+    <tp>c</tp>[<fn>ImGuiCol_FrameBg</fn>]              = <fn>ImVec4</fn>(${p.frame}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_FrameBgHovered</fn>]       = <fn>ImVec4</fn>(${p.btnH}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_SliderGrab</fn>]           = <fn>ImVec4</fn>(${p.grab}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_SliderGrabActive</fn>]     = <fn>ImVec4</fn>(${hx(c2)});
+    <tp>c</tp>[<fn>ImGuiCol_Button</fn>]               = <fn>ImVec4</fn>(${p.btn}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ButtonHovered</fn>]        = <fn>ImVec4</fn>(${p.btnH}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ButtonActive</fn>]         = <fn>ImVec4</fn>(${hx(c2)});
+    <tp>c</tp>[<fn>ImGuiCol_CheckMark</fn>]            = <fn>ImVec4</fn>(${p.chk}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_Header</fn>]               = <fn>ImVec4</fn>(${p.hdr}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_HeaderHovered</fn>]        = <fn>ImVec4</fn>(${p.btnH}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_HeaderActive</fn>]         = <fn>ImVec4</fn>(${hx(c2)});
+    <tp>c</tp>[<fn>ImGuiCol_Tab</fn>]                 = <fn>ImVec4</fn>(${p.tab}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_TabActive</fn>]            = <fn>ImVec4</fn>(${p.tabA}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_TabHovered</fn>]           = <fn>ImVec4</fn>(${p.btnH}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_Separator</fn>]            = <fn>ImVec4</fn>(${p.sep}, <num>1.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ScrollbarBg</fn>]          = <fn>ImVec4</fn>(<num>0.0f, 0.0f, 0.0f, 0.0f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ScrollbarGrab</fn>]        = <fn>ImVec4</fn>(${p.grab}, <num>0.50f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ScrollbarGrabHovered</fn>] = <fn>ImVec4</fn>(${p.grab}, <num>0.75f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ResizeGrip</fn>]           = <fn>ImVec4</fn>(${p.grab}, <num>0.20f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ResizeGripHovered</fn>]    = <fn>ImVec4</fn>(${p.grab}, <num>0.60f</num>);
+    <tp>c</tp>[<fn>ImGuiCol_ResizeGripActive</fn>]     = <fn>ImVec4</fn>(${hx(c2)});
+    <cmt>// Navbar item colors for side layout</cmt>
+    <tp>c</tp>[<fn>ImGuiCol_NavHighlight</fn>]         = <fn>ImVec4</fn>(${hx(c2)});
+}`;
+}
+
+function genHookCode(){
+  return `<cmt>// ════════════════════════════════════════════════════════════
+//  DirectX 11 Hook Template — ImGui Menu Builder v3
+// ════════════════════════════════════════════════════════════</cmt>
+<pp>#pragma once</pp>
+<pp>#include</pp> <str>"imgui.h"</str>
+<pp>#include</pp> <str>"imgui_impl_win32.h"</str>
+<pp>#include</pp> <str>"imgui_impl_dx11.h"</str>
+<pp>#include</pp> <str>&lt;d3d11.h&gt;</str>
+<pp>#include</pp> <str>&lt;Windows.h&gt;</str>
+
+<kw>void</kw> <fn>RenderMenu</fn>();   <kw>void</kw> <fn>ApplyMenuStyle</fn>();
+<kw>extern</kw> <fn>IMGUI_IMPL_API</fn> <kw>LRESULT</kw> <fn>ImGui_ImplWin32_WndProcHandler</fn>(<fn>HWND</fn>,<fn>UINT</fn>,<fn>WPARAM</fn>,<fn>LPARAM</fn>);
+
+<kw>typedef</kw> <kw>HRESULT</kw>(<fn>WINAPI</fn>* <tp>fn_Present</tp>)(<fn>IDXGISwapChain</fn>*, <fn>UINT</fn>, <fn>UINT</fn>);
+<tp>fn_Present</tp>  oPresent   = <kw>nullptr</kw>;
+<fn>WNDPROC</fn>     oWndProc   = <kw>nullptr</kw>;
+<kw>bool</kw>        g_bInit    = <kw>false</kw>;
+<kw>bool</kw>        g_bVisible = <kw>true</kw>;
+
+<fn>ID3D11Device</fn>*           g_Dev  = <kw>nullptr</kw>;
+<fn>ID3D11DeviceContext</fn>*    g_Ctx  = <kw>nullptr</kw>;
+<fn>ID3D11RenderTargetView</fn>* g_RTV  = <kw>nullptr</kw>;
+
+<kw>HRESULT</kw> <fn>WINAPI</fn> <fn>hkPresent</fn>(<fn>IDXGISwapChain</fn>* pSC, <fn>UINT</fn> Sync, <fn>UINT</fn> Flags)
+{
+    <kw>if</kw> (!g_bInit) {
+        pSC-><fn>GetDevice</fn>(<fn>__uuidof</fn>(<fn>ID3D11Device</fn>), (<kw>void</kw>**)&g_Dev);
+        g_Dev-><fn>GetImmediateContext</fn>(&g_Ctx);
+        <fn>DXGI_SWAP_CHAIN_DESC</fn> sd{};  pSC-><fn>GetDesc</fn>(&sd);
+        <fn>ID3D11Texture2D</fn>* bb = <kw>nullptr</kw>;
+        pSC-><fn>GetBuffer</fn>(<num>0</num>, <fn>__uuidof</fn>(<fn>ID3D11Texture2D</fn>), (<kw>void</kw>**)&bb);
+        g_Dev-><fn>CreateRenderTargetView</fn>(bb, <kw>nullptr</kw>, &g_RTV);  bb-><fn>Release</fn>();
+        <fn>IMGUI_CHECKVERSION</fn>();
+        <fn>ImGui::CreateContext</fn>();
+        <fn>ImGui::GetIO</fn>().IniFilename = <kw>nullptr</kw>;
+        <fn>ImGui::GetIO</fn>().ConfigFlags |= <fn>ImGuiConfigFlags_NavEnableKeyboard</fn>;
+        <fn>ApplyMenuStyle</fn>();
+        <fn>ImGui_ImplWin32_Init</fn>(sd.OutputWindow);
+        <fn>ImGui_ImplDX11_Init</fn>(g_Dev, g_Ctx);
+        oWndProc = (<fn>WNDPROC</fn>)<fn>SetWindowLongPtrW</fn>(sd.OutputWindow, GWLP_WNDPROC, (<fn>LONG_PTR</fn>)hkWndProc);
+        g_bInit = <kw>true</kw>;
+    }
+    <kw>if</kw> (<fn>GetAsyncKeyState</fn>(<fn>VK_INSERT</fn>) & <num>0x1</num>) g_bVisible = !g_bVisible;
+    <fn>ImGui_ImplDX11_NewFrame</fn>();
+    <fn>ImGui_ImplWin32_NewFrame</fn>();
+    <fn>ImGui::NewFrame</fn>();
+    <kw>if</kw> (g_bVisible) <fn>RenderMenu</fn>();
+    <fn>ImGui::Render</fn>();
+    g_Ctx-><fn>OMSetRenderTargets</fn>(<num>1</num>, &g_RTV, <kw>nullptr</kw>);
+    <fn>ImGui_ImplDX11_RenderDrawData</fn>(<fn>ImGui::GetDrawData</fn>());
+    <kw>return</kw> <fn>oPresent</fn>(pSC, Sync, Flags);
+}
+<kw>LRESULT</kw> <fn>WINAPI</fn> <fn>hkWndProc</fn>(<fn>HWND</fn> h, <fn>UINT</fn> m, <fn>WPARAM</fn> w, <fn>LPARAM</fn> l)
+{
+    <fn>ImGui::GetIO</fn>().MouseDrawCursor = g_bVisible;
+    <kw>if</kw> (g_bVisible && <fn>ImGui_ImplWin32_WndProcHandler</fn>(h, m, w, l)) <kw>return</kw> <kw>true</kw>;
+    <kw>return</kw> <fn>CallWindowProcW</fn>(oWndProc, h, m, w, l);
+}`;
+}
+
+/* ══════════════════════════════════════════════════════
+   CODE PANEL UI
+══════════════════════════════════════════════════════ */
+let curCodeTab='render';
+const CODEFNS={render:genRenderCode,style:genStyleCode,hook:genHookCode};
+
+function showCodeTab(tab){
+  curCodeTab=tab;
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.toggle('act',t.dataset.ctab===tab));
+  document.getElementById('code-out').innerHTML=CODEFNS[tab]();
+}
+document.querySelectorAll('.ctab').forEach(t=>t.onclick=()=>showCodeTab(t.dataset.ctab));
+document.getElementById('btn-code').onclick=()=>{document.getElementById('code-panel').classList.add('show');showCodeTab('render');};
+document.getElementById('cb-close').onclick=()=>document.getElementById('code-panel').classList.remove('show');
+document.getElementById('cb-copy').onclick=()=>{
+  navigator.clipboard.writeText(document.getElementById('code-out').textContent).then(()=>{
+    const b=document.getElementById('cb-copy');b.textContent='✓ Copied!';setTimeout(()=>b.textContent='📋 Copy',1800);
+  });
+};
+
+/* ══════════════════════════════════════════════════════
+   LAYOUT SWITCHER
+══════════════════════════════════════════════════════ */
+document.querySelectorAll('[data-layout]').forEach(b=>{
+  b.onclick=()=>{
+    PROJ.layout=b.dataset.layout;
+    document.querySelectorAll('[data-layout]').forEach(x=>x.classList.toggle('act',x.dataset.layout===PROJ.layout));
+    const showNavW=PROJ.layout==='side';
+    document.querySelector('[for="ws-navw"]')?.parentElement;
+    document.querySelectorAll('#lbar-right, [for]').forEach(()=>{});
+    renderIgBody();
+  };
+});
+
+/* ══════════════════════════════════════════════════════
+   SIDEBAR TABS
+══════════════════════════════════════════════════════ */
+document.querySelectorAll('.sb-tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.sb-tab').forEach(x=>x.classList.toggle('act',x===t));
+    document.querySelectorAll('.sb-panel').forEach(p=>p.classList.add('hidden'));
+    document.getElementById('sbp-'+t.dataset.sbtab).classList.remove('hidden');
+  };
+});
+
+/* ══════════════════════════════════════════════════════
+   NAV MANAGEMENT
+══════════════════════════════════════════════════════ */
+document.getElementById('nav-add-cat').onclick=()=>{
+  snap();
+  const id=uid();
+  PROJ.navItems.push({id,name:'Category',icon:'📁',expanded:false,subs:[]});
+  PROJ.navSections[id]=[];
+  fullRender();
+};
+document.getElementById('nav-add-sec').onclick=()=>{
+  const secs=activeSections();
+  if(!secs){alert('Select a nav item first (click it in preview).');return;}
+  snap();
+  secs.push({id:uid(),title:'New Section',hasToggle:true,toggleVar:'bSection'+secs.length,toggleOn:false,collapsed:false,widgets:[]});
+  renderIgBody();
+};
+
+/* ══════════════════════════════════════════════════════
+   WINDOW DRAG / RESIZE
+══════════════════════════════════════════════════════ */
+document.getElementById('igwin-tb').addEventListener('mousedown',e=>{
+  const ox=e.clientX-igwin.offsetLeft,oy=e.clientY-igwin.offsetTop;
+  const mv=e2=>{igwin.style.left=(e2.clientX-ox)+'px';igwin.style.top=(e2.clientY-oy)+'px';};
+  const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+});
+document.getElementById('igwin-rsz').addEventListener('mousedown',e=>{
+  e.stopPropagation();e.preventDefault();
+  const sx=e.clientX,sy=e.clientY,sw=igwin.offsetWidth,sh=igwin.offsetHeight;
+  const mv=e2=>{
+    igwin.style.width=Math.max(300,sw+e2.clientX-sx)+'px';
+    igwin.style.height=Math.max(200,sh+e2.clientY-sy)+'px';
+    document.getElementById('ws-w').value=Math.max(300,sw+e2.clientX-sx);
+    document.getElementById('ws-h').value=Math.max(200,sh+e2.clientY-sy);
+  };
+  const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+});
+
+/* ══════════════════════════════════════════════════════
+   SETTINGS LIVE UPDATE
+══════════════════════════════════════════════════════ */
+document.getElementById('ws-title').addEventListener('input',e=>document.getElementById('win-title-disp').textContent=e.target.value||'Mod Menu');
+['ws-w','ws-h'].forEach(id=>document.getElementById(id).addEventListener('input',applyWinSize));
+document.getElementById('ws-navw').addEventListener('input',()=>renderIgBody());
+document.getElementById('ws-c1').addEventListener('input',updateTitlebar);
+document.getElementById('ws-c2').addEventListener('input',updateTitlebar);
+
+/* ══════════════════════════════════════════════════════
+   TOOLBAR
+══════════════════════════════════════════════════════ */
+function delSelected(){
+  if(PROJ.sel.widgetUid){delWidget();return;}
+  if(PROJ.sel.secId){delSection();}
+}
+document.getElementById('tb-del').onclick=delSelected;
+document.getElementById('tb-dup').onclick=()=>{if(PROJ.sel.widgetUid)dupWidget();};
+document.getElementById('tb-clr').onclick=()=>{
+  if(!confirm('Clear all sections for current nav?'))return;
+  snap();
+  const secs=activeSections();
+  if(secs){while(secs.length)secs.pop();}
+  else{PROJ.classicWidgets.length=0;}
+  PROJ.sel={secId:null,widgetUid:null};renderIgBody();renderProps();
+};
+document.getElementById('tb-up').onclick=()=>{
+  const secs=activeSections();if(!secs||!PROJ.sel.widgetUid)return;
+  for(const s of secs){const i=s.widgets.findIndex(x=>x.uid===PROJ.sel.widgetUid);if(i>0){snap();[s.widgets[i-1],s.widgets[i]]=[s.widgets[i],s.widgets[i-1]];renderIgBody();return;}}
+};
+document.getElementById('tb-dn').onclick=()=>{
+  const secs=activeSections();if(!secs||!PROJ.sel.widgetUid)return;
+  for(const s of secs){const i=s.widgets.findIndex(x=>x.uid===PROJ.sel.widgetUid);if(i>=0&&i<s.widgets.length-1){snap();[s.widgets[i],s.widgets[i+1]]=[s.widgets[i+1],s.widgets[i]];renderIgBody();return;}}
+};
+
+/* ══════════════════════════════════════════════════════
+   SAVE / LOAD / EXPORT
+══════════════════════════════════════════════════════ */
+document.getElementById('h-save').onclick=()=>{
+  const data=JSON.stringify({...PROJ,_classicDrop:undefined},null,2);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='imgui-project-v3.json';a.click();
+};
+document.getElementById('h-load').onclick=()=>document.getElementById('h-load-in').click();
+document.getElementById('h-load-in').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{
+      const p=JSON.parse(ev.target.result);
+      snap();Object.assign(PROJ,p);
+      document.getElementById('ws-title').value=PROJ.title||'Mod Menu';
+      document.getElementById('win-title-disp').textContent=PROJ.title||'Mod Menu';
+      document.getElementById('ws-w').value=PROJ.w||620;
+      document.getElementById('ws-h').value=PROJ.h||420;
+      document.querySelectorAll('[data-layout]').forEach(x=>x.classList.toggle('act',x.dataset.layout===PROJ.layout));
+      fullRender();
+    }catch(err){alert('File error: '+err.message);}
+  };r.readAsText(f);e.target.value='';
+});
+document.getElementById('h-export').onclick=()=>{
+  const b=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='imgui-builder-v3.html';a.click();
+};
+
+/* ══════════════════════════════════════════════════════
+   UNDO / REDO / KEYBOARD
+══════════════════════════════════════════════════════ */
+document.getElementById('h-undo').onclick=undo;
+document.getElementById('h-redo').onclick=redo;
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='Delete'||e.key==='Backspace')delSelected();
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  if(e.ctrlKey&&(e.key==='y'||e.key==='Y')){e.preventDefault();redo();}
+  if(e.ctrlKey&&e.key==='d'){e.preventDefault();if(PROJ.sel.widgetUid)dupWidget();}
+});
+
+/* ══════════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════════ */
+document.getElementById('sb-search').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  document.querySelectorAll('.wi').forEach(el=>el.classList.toggle('hidden',!!q&&!el.textContent.toLowerCase().includes(q)));
+  document.querySelectorAll('.cat-lbl').forEach(el=>{
+    let s=el.nextElementSibling,vis=false;
+    while(s&&s.classList.contains('wi')){if(!s.classList.contains('hidden'))vis=true;s=s.nextElementSibling;}
+    el.style.display=vis||!q?'':'none';
+  });
+});
+
+/* ══════════════════════════════════════════════════════
+   CANVAS CLICK DESELECT
+══════════════════════════════════════════════════════ */
+document.getElementById('canvas').addEventListener('click',e=>{
+  if(e.target.id==='canvas'){PROJ.sel={secId:null,widgetUid:null};renderIgBody();renderProps();}
+});
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+buildPresets();
+applyPreset('purple');
+renderNavEditor();
+fullRender();
+</script>
+</body>
+</html>
