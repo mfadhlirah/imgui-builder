@@ -184,6 +184,28 @@ select.pi{cursor:pointer}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#1e1e3a;border-radius:3px}
+
+/* Drag active state */
+body.drag-active .sec-body{
+  min-height:40px!important;
+  background:#0d0d22;
+  border:1px dashed #2a2a5a;
+  border-radius:2px;
+  transition:background .15s;
+}
+body.drag-active .section-card{
+  outline:1px solid #2a2a5a;
+}
+body.drag-active .sec-body:hover{
+  border-color:#e9456066;
+  background:#0f0f2a;
+}
+.wi[draggable="true"]:active{
+  opacity:.6;
+  cursor:grabbing;
+}
+.drop-ind{pointer-events:none;transition:none}
+.sec-body{transition:background .1s,border .1s}
 </style>
 </head>
 <body>
@@ -538,28 +560,40 @@ function renderClassicLayout() {
 
 function renderClassicWidgets(container) {
   PROJ.classicWidgets.forEach((w,i)=>{
-    if(PROJ._classicDrop===i) container.appendChild(mkDropInd());
     const el=mkWitem(w);
     container.appendChild(el);
   });
-  if(PROJ._classicDrop===PROJ.classicWidgets.length) container.appendChild(mkDropInd());
-  // drop zone at end
+  // persistent drop indicator
+  const ind=mkDropInd(); ind.style.display='none'; container.appendChild(ind);
+
+  container.addEventListener('dragenter',e=>{e.preventDefault();});
   container.addEventListener('dragover',e=>{
-    e.preventDefault();
-    const els=[...container.querySelectorAll('.witem')];
-    let idx=PROJ.classicWidgets.length;
-    for(let i=0;i<els.length;i++)if(e.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
-    if(PROJ._classicDrop!==idx){PROJ._classicDrop=idx;renderIgBody();}
+    e.preventDefault(); e.stopPropagation();
+    if(!DRAGGING_TYPE) return;
+    const items=[...container.querySelectorAll('.witem')];
+    let idx=items.length;
+    for(let i=0;i<items.length;i++){
+      if(e.clientY < items[i].getBoundingClientRect().top + items[i].offsetHeight/2){idx=i;break;}
+    }
+    PROJ._classicDrop=idx;
+    ind.style.display='';
+    if(idx>=items.length) container.appendChild(ind);
+    else container.insertBefore(ind,items[idx]);
   });
-  container.addEventListener('dragleave',e=>{if(!container.contains(e.relatedTarget)){PROJ._classicDrop=null;renderIgBody();}});
+  container.addEventListener('dragleave',e=>{
+    if(!container.contains(e.relatedTarget)){
+      PROJ._classicDrop=null; ind.style.display='none';
+    }
+  });
   container.addEventListener('drop',e=>{
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
+    ind.style.display='none';
     if(DRAGGING_TYPE){
       snap();
       const idx=PROJ._classicDrop??PROJ.classicWidgets.length;
       PROJ.classicWidgets.splice(idx,0,mkw(DRAGGING_TYPE));
     }
-    DRAGGING_TYPE=null;PROJ._classicDrop=null;renderIgBody();
+    DRAGGING_TYPE=null; PROJ._classicDrop=null; renderIgBody();
   });
 }
 
@@ -567,9 +601,24 @@ function renderSections(container) {
   const secs = activeSections();
   if(!secs){ container.innerHTML='<div class="sec-empty">No sections for this nav item</div>'; return; }
   if(!secs.length){
-    const e=document.createElement('div');
-    e.className='sec-empty';e.textContent='No sections. Add one in the Nav tab.';
-    container.appendChild(e);
+    const empty=document.createElement('div');
+    empty.className='sec-empty';
+    empty.textContent='No sections — add one in the Nav tab.';
+    empty.style.cssText='border:2px dashed #1e1e3a;border-radius:4px;padding:16px;text-align:center;margin:8px';
+    // also accept drops when empty → auto-create section + add widget
+    empty.addEventListener('dragover',e=>{e.preventDefault();empty.style.borderColor='#e94560';});
+    empty.addEventListener('dragleave',()=>empty.style.borderColor='#1e1e3a');
+    empty.addEventListener('drop',e=>{
+      e.preventDefault(); empty.style.borderColor='#1e1e3a';
+      if(!DRAGGING_TYPE) return;
+      snap();
+      const newSec={id:uid(),title:'Section',hasToggle:true,toggleVar:'bSection',toggleOn:false,collapsed:false,widgets:[mkw(DRAGGING_TYPE)]};
+      secs.push(newSec);
+      PROJ.sel.secId=newSec.id;
+      DRAGGING_TYPE=null; renderIgBody(); renderProps();
+    });
+    container.appendChild(empty);
+    return;
   }
   secs.forEach((sec,si)=>{
     const card=document.createElement('div');
@@ -589,43 +638,93 @@ function renderSections(container) {
     }
     const arr=document.createElement('span');
     arr.className='sec-arr';arr.textContent=sec.collapsed?'▶':'▼';
+    arr.style.cursor='pointer';
+    arr.onclick=e=>{
+      e.stopPropagation();
+      sec.collapsed=!sec.collapsed;
+      renderIgBody();
+    };
     hdr.appendChild(arr);
     hdr.onclick=()=>{
-      PROJ.sel.secId=sec.id;PROJ.sel.widgetUid=null;
-      if(document.pointerType!==undefined)sec.collapsed=!sec.collapsed;
-      renderIgBody();renderProps();
+      // only select, don't collapse
+      document.querySelectorAll('.section-card.selected-sec').forEach(x=>x.classList.remove('selected-sec'));
+      document.querySelectorAll('.witem.sel').forEach(x=>x.classList.remove('sel'));
+      card.classList.add('selected-sec');
+      PROJ.sel.secId=sec.id; PROJ.sel.widgetUid=null;
+      renderProps();
     };
     card.appendChild(hdr);
     // Body
     if(!sec.collapsed){
       const body=document.createElement('div');
       body.className='sec-body';
-      sec.widgets.forEach((w,wi)=>{
-        if(sec._drop===wi) body.appendChild(mkDropInd());
-        const el=mkWitem(w,sec);
-        body.appendChild(el);
+      body.dataset.secid = sec.id;
+      // min height so empty section is still droppable
+      body.style.minHeight='28px';
+
+      sec.widgets.forEach((w)=>{
+        body.appendChild(mkWitem(w,sec));
       });
-      if(sec._drop===sec.widgets.length) body.appendChild(mkDropInd());
-      // Drop handling
+
+      // Single persistent drop indicator per section body
+      const ind=mkDropInd();
+      ind.style.display='none';
+      ind.style.pointerEvents='none'; // don't interfere with drag events
+      body.appendChild(ind);
+
+      body.addEventListener('dragenter',e=>{e.preventDefault();e.stopPropagation();});
       body.addEventListener('dragover',e=>{
-        e.preventDefault();e.stopPropagation();
-        const els=[...body.querySelectorAll('.witem')];
-        let idx=sec.widgets.length;
-        for(let i=0;i<els.length;i++)if(e.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
-        if(sec._drop!==idx){sec._drop=idx;renderIgBody();}
+        e.preventDefault(); e.stopPropagation();
+        if(!DRAGGING_TYPE) return;
+        const items=[...body.querySelectorAll('.witem')];
+        let idx=items.length;
+        for(let i=0;i<items.length;i++){
+          if(e.clientY < items[i].getBoundingClientRect().top + items[i].offsetHeight/2){idx=i;break;}
+        }
+        sec._drop=idx;
+        ind.style.display='';
+        // Move indicator to right position (before item[idx], or at end)
+        if(idx>=items.length) body.appendChild(ind);
+        else body.insertBefore(ind,items[idx]);
       });
-      body.addEventListener('dragleave',e=>{if(!body.contains(e.relatedTarget)){sec._drop=null;renderIgBody();}});
+      body.addEventListener('dragleave',e=>{
+        if(!body.contains(e.relatedTarget)){
+          sec._drop=null;
+          ind.style.display='none';
+        }
+      });
       body.addEventListener('drop',e=>{
-        e.preventDefault();e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
+        ind.style.display='none';
         if(DRAGGING_TYPE){
           snap();
-          const idx=sec._drop??sec.widgets.length;
+          const idx = sec._drop ?? sec.widgets.length;
           sec.widgets.splice(idx,0,mkw(DRAGGING_TYPE));
           PROJ.sel.secId=sec.id;
+          PROJ.sel.widgetUid=null;
         }
-        DRAGGING_TYPE=null;sec._drop=null;renderIgBody();renderProps();
+        DRAGGING_TYPE=null; sec._drop=null;
+        renderIgBody(); renderProps();
       });
+
       card.appendChild(body);
+    } else {
+      // Collapsed — still allow drop (auto-expand)
+      card.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();
+        if(DRAGGING_TYPE) card.style.outline='1px dashed #e9456066';
+      });
+      card.addEventListener('dragleave',()=>card.style.outline='');
+      card.addEventListener('drop',e=>{
+        e.preventDefault(); e.stopPropagation();
+        card.style.outline='';
+        if(DRAGGING_TYPE){
+          snap();
+          sec.collapsed=false;
+          sec.widgets.push(mkw(DRAGGING_TYPE));
+          PROJ.sel.secId=sec.id;
+        }
+        DRAGGING_TYPE=null; renderIgBody(); renderProps();
+      });
     }
     container.appendChild(card);
   });
@@ -636,21 +735,26 @@ function mkDropInd(){
   d.className='drop-ind';d.textContent='+ drop here';return d;
 }
 
-function mkWitem(w,sec){
-  const el=document.createElement('div');
-  el.className='witem'+(PROJ.sel.widgetUid===w.uid?' sel':'');
-  el.innerHTML=rwHTML(w)+'<span class="wdh">⠿</span>';
-  el.addEventListener('click',e=>{
+function mkWitem(w, sec) {
+  const el = document.createElement('div');
+  el.className = 'witem' + (PROJ.sel.widgetUid === w.uid ? ' sel' : '');
+  el.dataset.wuid = w.uid;
+  el.innerHTML = rwHTML(w) + '<span class="wdh" title="drag to reorder">⠿</span>';
+  el.addEventListener('click', e => {
     e.stopPropagation();
-    PROJ.sel.widgetUid=w.uid;
-    PROJ.sel.secId=sec?sec.id:null;
-    renderIgBody();renderProps();
+    // Deselect previous
+    document.querySelectorAll('.witem.sel').forEach(x => x.classList.remove('sel'));
+    document.querySelectorAll('.section-card.selected-sec').forEach(x => x.classList.remove('selected-sec'));
+    el.classList.add('sel');
+    PROJ.sel.widgetUid = w.uid;
+    PROJ.sel.secId = sec ? sec.id : null;
+    renderProps(); // only update props panel, not full re-render
   });
-  if(sec){
-    el.querySelector('.wdh').addEventListener('mousedown',e=>{
+  if (sec) {
+    el.querySelector('.wdh').addEventListener('mousedown', e => {
       e.preventDefault();
-      const si=sec.widgets.indexOf(w);
-      startWidgetReorder(e,sec,si);
+      const si = sec.widgets.indexOf(w);
+      startWidgetReorder(e, sec, si);
     });
   }
   return el;
@@ -723,39 +827,79 @@ function renderNavEditor(){
 ══════════════════════════════════════════════════════ */
 let DRAGGING_TYPE = null;
 document.querySelectorAll('.wi').forEach(el=>{
-  el.addEventListener('dragstart',()=>DRAGGING_TYPE=el.dataset.type);
+  el.addEventListener('dragstart',e=>{
+    DRAGGING_TYPE = el.dataset.type;
+    e.dataTransfer.setData('text/plain', el.dataset.type);
+    e.dataTransfer.effectAllowed = 'copy';
+    // Add drag-active class to highlight valid drop zones
+    document.body.classList.add('drag-active');
+  });
   el.addEventListener('dragend',()=>{
-    DRAGGING_TYPE=null;
-    // clear all drops
-    if(PROJ.navSections){Object.values(PROJ.navSections).forEach(secs=>secs.forEach(s=>s._drop=null));}
-    PROJ._classicDrop=null;
-    renderIgBody();
+    DRAGGING_TYPE = null;
+    document.body.classList.remove('drag-active');
+    // Clean up any leftover drop indicators
+    document.querySelectorAll('.drop-ind').forEach(d=>d.style.display='none');
+    if(PROJ.navSections){
+      Object.values(PROJ.navSections).forEach(secs=>secs&&secs.forEach(s=>s._drop=null));
+    }
+    PROJ._classicDrop = null;
   });
 });
 
 /* ══════════════════════════════════════════════════════
    WIDGET REORDER
 ══════════════════════════════════════════════════════ */
-function startWidgetReorder(e,sec,srcIdx){
-  const onMove=ev=>{
-    const container=document.querySelector('.sec-body');
-    if(!container)return;
-    const els=[...container.querySelectorAll('.witem')];
-    let idx=sec.widgets.length;
-    for(let i=0;i<els.length;i++)if(ev.clientY<els[i].getBoundingClientRect().top+els[i].offsetHeight/2){idx=i;break;}
-    if(sec._drop!==idx){sec._drop=idx;renderIgBody();}
-  };
-  const onUp=()=>{
-    if(sec._drop!==null&&sec._drop!==undefined){
-      snap();let dst=sec._drop;if(dst>srcIdx)dst--;
-      const [w]=sec.widgets.splice(srcIdx,1);sec.widgets.splice(dst,0,w);
+function startWidgetReorder(e, sec, srcIdx) {
+  let dropIdx = null;
+  // Create a floating indicator for reorder
+  const ghost = document.createElement('div');
+  ghost.style.cssText = 'position:fixed;background:#e9456022;border:1px dashed #e94560;border-radius:2px;height:20px;pointer-events:none;z-index:999;font-size:9px;color:#e94560;display:flex;align-items:center;justify-content:center;';
+  ghost.textContent = '↕ ' + (sec.widgets[srcIdx]?.type || 'widget');
+  document.body.appendChild(ghost);
+
+  const onMove = ev => {
+    ghost.style.left = (ev.clientX + 12) + 'px';
+    ghost.style.top  = (ev.clientY - 10) + 'px';
+    ghost.style.width = '120px';
+
+    const body = document.querySelector(`[data-secid="${sec.id}"]`);
+    if (!body) return;
+    const items = [...body.querySelectorAll('.witem')];
+    let idx = sec.widgets.length;
+    for (let i = 0; i < items.length; i++) {
+      if (ev.clientY < items[i].getBoundingClientRect().top + items[i].offsetHeight / 2) { idx = i; break; }
     }
-    sec._drop=null;renderIgBody();
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
+    if (dropIdx !== idx) {
+      dropIdx = idx;
+      // move reorder indicator without full re-render
+      body.querySelectorAll('.reorder-ind').forEach(d => d.remove());
+      const ind = document.createElement('div');
+      ind.className = 'reorder-ind';
+      ind.style.cssText = 'height:2px;background:#e94560;margin:1px 0;border-radius:1px;pointer-events:none';
+      if (idx >= items.length) body.appendChild(ind);
+      else body.insertBefore(ind, items[idx]);
+    }
   };
-  document.addEventListener('mousemove',onMove);
-  document.addEventListener('mouseup',onUp);
+
+  const onUp = () => {
+    ghost.remove();
+    document.querySelectorAll('.reorder-ind').forEach(d => d.remove());
+    if (dropIdx !== null) {
+      snap();
+      let dst = dropIdx;
+      if (dst > srcIdx) dst--;
+      if (dst !== srcIdx) {
+        const [w] = sec.widgets.splice(srcIdx, 1);
+        sec.widgets.splice(dst, 0, w);
+      }
+      renderIgBody();
+    }
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 }
 
 /* ══════════════════════════════════════════════════════
