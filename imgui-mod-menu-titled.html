@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ghost Framework — Titled Sidebar</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:        #0d0d0f;
+  --surface:   #141416;
+  --s2:        #1a1a1e;
+  --s3:        #202026;
+  --line:      #2a2a32;
+  --line2:     #333340;
+  --text:      #e8e8f0;
+  --muted:     #6b6b80;
+  --dim:       #3a3a48;
+  --accent:    #a8ff47;
+  --accent-g:  rgba(168,255,71,.07);
+  --accent-g2: rgba(168,255,71,.14);
+  --red:       #ff5757;
+  --amber:     #ffb347;
+  --blue:      #5b9fff;
+  --r:         10px;
+  --rs:        6px;
+}
+
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--bg);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);
+  overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+
+/* ── WINDOW ── */
+.win{
+  position:relative;z-index:1;
+  width:600px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:0 32px 80px rgba(0,0,0,.7),0 8px 24px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.03);
+  overflow:hidden;
+  animation:rise .45s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;
+  padding:0 16px;height:46px;
+  border-bottom:1px solid var(--line);
+  background:var(--s2);gap:10px;
+}
+.topbar-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+  animation:blink 2.4s ease-in-out infinite;flex-shrink:0;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-title{font-size:13px;font-weight:600;color:var(--text);flex:1;letter-spacing:-.01em}
+.topbar-ver{
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);
+  background:var(--s3);padding:3px 8px;border-radius:4px;border:1px solid var(--line);
+}
+.topbar-close{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--s3);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);font-size:11px;transition:all .15s;
+}
+.topbar-close:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+/* ── LAYOUT ── */
+.body{display:flex;height:420px}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:148px;
+  background:var(--s2);
+  border-right:1px solid var(--line);
+  padding:10px 8px;
+  display:flex;flex-direction:column;
+  gap:2px;flex-shrink:0;
+}
+
+.sidebar-section{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);
+  padding:8px 8px 4px;
+}
+.sidebar-section:first-child{padding-top:2px}
+
+.nav{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;
+  border-radius:var(--rs);
+  cursor:pointer;
+  color:var(--muted);
+  transition:all .15s;
+  position:relative;
+  user-select:none;
+}
+.nav:hover{background:var(--s3);color:var(--text)}
+.nav.active{
+  background:var(--accent-g2);
+  color:var(--accent);
+}
+.nav.active::before{
+  content:'';
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:18px;
+  background:var(--accent);
+  border-radius:0 3px 3px 0;
+}
+.nav-icon{
+  width:16px;height:16px;flex-shrink:0;
+  stroke-width:1.8;fill:none;stroke:currentColor;
+  transition:all .15s;
+}
+.nav-label{
+  font-size:12px;font-weight:500;
+  white-space:nowrap;
+  letter-spacing:.01em;
+  line-height:1;
+}
+
+.nav-badge{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  background:rgba(255,87,87,.15);
+  color:var(--red);
+  border:1px solid rgba(255,87,87,.25);
+  padding:1px 5px;border-radius:3px;
+}
+.nav-badge.ok{
+  background:rgba(168,255,71,.12);
+  color:var(--accent);
+  border-color:rgba(168,255,71,.25);
+}
+
+.sidebar-div{
+  height:1px;background:var(--line);
+  margin:4px 2px;
+}
+
+/* ── CONTENT ── */
+.content{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:6px;
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent;
+}
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+
+.page{display:flex;flex-direction:column;gap:6px;animation:slide .2s ease both}
+@keyframes slide{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:none}}
+
+/* ── COMPONENTS ── */
+.label{
+  font-size:10px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);
+  padding:4px 2px 2px;margin-top:2px;
+}
+
+.row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;background:var(--s2);
+  border:1px solid var(--line);border-radius:var(--rs);
+  cursor:pointer;transition:all .15s;gap:10px;user-select:none;
+}
+.row:hover{background:var(--s3);border-color:var(--line2)}
+.row.on{border-color:rgba(168,255,71,.22);background:rgba(168,255,71,.02)}
+.row-info{flex:1}
+.row-name{font-size:13px;font-weight:500;color:var(--text);line-height:1}
+.row-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1}
+.row-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.kbd{
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);
+  background:var(--bg);border:1px solid var(--line2);padding:2px 6px;border-radius:4px;
+}
+
+/* toggle */
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.toggle input{display:none}
+.tt{position:absolute;inset:0;background:var(--s3);border:1px solid var(--line2);border-radius:10px;transition:all .2s}
+.th{
+  position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;
+  background:var(--muted);transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.toggle.on .tt{background:var(--accent-g2);border-color:rgba(168,255,71,.4)}
+.toggle.on .th{left:19px;background:var(--accent);box-shadow:0 0 8px rgba(168,255,71,.5)}
+
+/* slider */
+.srow{padding:9px 12px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);transition:border-color .15s;cursor:default}
+.srow:hover{border-color:var(--line2)}
+.srow-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.srow-name{font-size:13px;font-weight:500;color:var(--text)}
+.srow-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);min-width:40px;text-align:right}
+.s-track{height:4px;background:var(--s3);border-radius:2px;position:relative;cursor:pointer;border:1px solid var(--line)}
+.s-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:2px}
+.s-thumb{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:var(--text);border:2px solid var(--accent);
+  box-shadow:0 0 0 3px rgba(168,255,71,.12);
+  transform:translate(-50%,-50%);cursor:grab;
+}
+
+/* button */
+.brow{display:flex;gap:6px}
+.btn{
+  flex:1;padding:8px 10px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);
+  font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;
+  color:var(--muted);cursor:pointer;text-align:center;transition:all .15s;text-transform:uppercase;
+}
+.btn:hover{background:var(--s3);border-color:var(--line2);color:var(--text)}
+.btn:active{transform:scale(.97)}
+.btn.p{background:rgba(168,255,71,.07);border-color:rgba(168,255,71,.3);color:var(--accent)}
+.btn.p:hover{background:rgba(168,255,71,.14)}
+.btn.d{background:rgba(255,87,87,.07);border-color:rgba(255,87,87,.28);color:var(--red)}
+.btn.d:hover{background:rgba(255,87,87,.14)}
+
+/* input */
+.irow{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);transition:all .15s;
+}
+.irow:focus-within{border-color:rgba(168,255,71,.4);background:rgba(168,255,71,.02)}
+.irow svg{width:14px;height:14px;stroke:var(--muted);stroke-width:2;fill:none;flex-shrink:0}
+.ifield{flex:1;background:none;border:none;outline:none;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);caret-color:var(--accent)}
+.ifield::placeholder{color:var(--dim)}
+
+/* progress */
+.prog{padding:9px 12px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs)}
+.prog-top{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:7px}
+.prog-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px}
+
+/* pill */
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.04em;
+}
+.pill.ok{background:rgba(168,255,71,.1);color:var(--accent);border:1px solid rgba(168,255,71,.25)}
+.pill.warn{background:rgba(255,179,71,.1);color:var(--amber);border:1px solid rgba(255,179,71,.25)}
+.pill.err{background:rgba(255,87,87,.1);color:var(--red);border:1px solid rgba(255,87,87,.25)}
+
+/* dropdown */
+.drow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);
+  cursor:pointer;transition:all .15s;
+}
+.drow:hover{background:var(--s3);border-color:var(--line2)}
+.drow-label{font-size:13px;font-weight:500;color:var(--text)}
+.drow-right{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.chev{width:13px;height:13px;stroke:var(--muted);stroke-width:2;fill:none;transition:transform .2s}
+.drow.open .chev{transform:rotate(180deg)}
+.dropts{background:var(--s3);border:1px solid var(--line2);border-radius:var(--rs);overflow:hidden;max-height:0;opacity:0;transition:max-height .2s,opacity .2s}
+.dropts.open{max-height:200px;opacity:1}
+.dopt{padding:7px 12px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--line);transition:all .12s}
+.dopt:last-child{border-bottom:none}
+.dopt:hover{background:var(--s2);color:var(--text)}
+.dopt.sel{color:var(--accent)}
+
+/* color row */
+.crow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);
+  cursor:pointer;transition:all .15s;
+}
+.crow:hover{background:var(--s3);border-color:var(--line2)}
+.crow-label{font-size:13px;font-weight:500;color:var(--text)}
+.crow-right{display:flex;align-items:center;gap:7px}
+.swatch{width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.12);transition:transform .15s}
+.crow:hover .swatch{transform:scale(1.1)}
+.crow-hex{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* keybind */
+.krow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;background:var(--s2);border:1px solid var(--line);border-radius:var(--rs);
+  cursor:pointer;transition:all .15s;
+}
+.krow:hover{background:var(--s3);border-color:var(--line2)}
+.krow-label{font-size:13px;font-weight:500;color:var(--text)}
+.chips{display:flex;align-items:center;gap:3px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text);background:var(--s3);border:1px solid var(--line2);padding:3px 7px;border-radius:4px}
+.chip-plus{font-size:10px;color:var(--dim);padding:0 1px}
+
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:2px}
+.tab{padding:4px 11px;font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--muted);border-radius:4px;cursor:pointer;transition:all .15s}
+.tab:hover{color:var(--text);background:var(--s3)}
+.tab.on{color:var(--accent);background:var(--accent-g)}
+
+/* footer */
+.footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 16px;border-top:1px solid var(--line);background:var(--s2);
+}
+.footer-left{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.footer-stat{color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="win">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-dot"></div>
+    <span class="topbar-title">Ghost Framework</span>
+    <span class="topbar-ver">v2.4.1</span>
+    <div class="topbar-close">✕</div>
+  </div>
+
+  <div class="body">
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+
+      <div class="sidebar-section">Modules</div>
+
+      <div class="nav active" onclick="go('combat',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <line x1="12" y1="3" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="nav-label">Combat</span>
+      </div>
+
+      <div class="nav" onclick="go('movement',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <span class="nav-label">Movement</span>
+      </div>
+
+      <div class="nav" onclick="go('visual',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span class="nav-label">Visual</span>
+        <span class="nav-badge">3</span>
+      </div>
+
+      <div class="nav" onclick="go('player',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="nav-label">Player</span>
+      </div>
+
+      <div class="sidebar-div"></div>
+      <div class="sidebar-section">System</div>
+
+      <div class="nav" onclick="go('scripts',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+        <span class="nav-label">Scripts</span>
+        <span class="nav-badge ok">3</span>
+      </div>
+
+      <div class="nav" onclick="go('settings',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span class="nav-label">Settings</span>
+      </div>
+
+    </div>
+
+    <!-- ── CONTENT ── -->
+    <div class="content" id="ct"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>FPS <span class="footer-stat" id="fps">144</span></span>
+      <span>MEM <span class="footer-stat">47.3MB</span></span>
+    </div>
+    <div class="pill ok">● ACTIVE</div>
+  </div>
+</div>
+
+<script>
+const pages = {
+
+  combat:()=>`<div class="page">
+  <div class="label">Aimbot</div>
+  <div class="row on" onclick="tog(this)">
+    <div class="row-info"><div class="row-name">Enable Aimbot</div><div class="row-desc">V8 hook — bone prediction active</div></div>
+    <div class="row-right"><span class="kbd">INS</span>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="row" onclick="tog(this)">
+    <div class="row-info"><div class="row-name">Silent Aim</div><div class="row-desc">Server-side correction bypass</div></div>
+    <div class="row-right"><span class="kbd">F5</span>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="srow"><div class="srow-top"><span class="srow-name">FOV Radius</span><span class="srow-val" id="v0">85 px</span></div>
+    <div class="s-track" data-min="10" data-max="200" data-val="85" data-u=" px" data-id="v0">
+      <div class="s-fill" style="width:37.5%"></div><div class="s-thumb" style="left:37.5%"></div></div></div>
+  <div class="srow"><div class="srow-top"><span class="srow-name">Smoothing</span><span class="srow-val" id="v1">3.2</span></div>
+    <div class="s-track" data-min="1" data-max="10" data-val="3.2" data-step=".1" data-id="v1">
+      <div class="s-fill" style="width:24%"></div><div class="s-thumb" style="left:24%"></div></div></div>
+  <div class="label">Misc</div>
+  <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">No Recoil</div></div>
+    <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Infinite Ammo</div></div>
+    <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">Rapid Fire</div></div>
+    <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="brow">
+    <div class="btn p" onclick="pulse(this)">Apply</div>
+    <div class="btn"   onclick="pulse(this)">Reset</div>
+    <div class="btn d" onclick="pulse(this)">Panic</div>
+  </div>
+</div>`,
+
+  movement:()=>`<div class="page">
+  <div class="label">Locomotion</div>
+  <div class="row on" onclick="tog(this)">
+    <div class="row-info"><div class="row-name">Speed Hack</div><div class="row-desc">Patches CharacterMovement velocity</div></div>
+    <div class="row-right"><span class="kbd">F6</span>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="srow"><div class="srow-top"><span class="srow-name">Speed Multiplier</span><span class="srow-val" id="v2">2.5×</span></div>
+    <div class="s-track" data-min="1" data-max="10" data-val="2.5" data-step=".1" data-u="×" data-id="v2">
+      <div class="s-fill" style="width:16.7%"></div><div class="s-thumb" style="left:16.7%"></div></div></div>
+  <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">Fly Mode</div></div>
+    <div class="row-right"><span class="kbd">F7</span>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div></div>
+  <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">No Clip</div></div>
+    <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Infinite Jump</div></div>
+    <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="label">Teleport</div>
+  <div class="irow"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="ifield" placeholder="Search waypoint or coordinates…"/></div>
+  <div class="brow">
+    <div class="btn p">Teleport To</div>
+    <div class="btn">Save Pos</div>
+    <div class="btn">Recall</div>
+  </div>
+  <div class="prog"><div class="prog-top"><span>Cooldown</span><span style="color:var(--amber)">3.2s</span></div>
+    <div class="prog-track"><div class="prog-fill" style="width:64%;background:var(--amber)"></div></div></div>
+</div>`,
+
+  visual:()=>`<div class="page">
+  <div class="tabs">
+    <div class="tab on"  onclick="stab(this,'esp')">ESP</div>
+    <div class="tab"     onclick="stab(this,'render')">Render</div>
+    <div class="tab"     onclick="stab(this,'colors')">Colors</div>
+  </div>
+  <div id="tab-esp">
+    <div class="row on" onclick="tog(this)" style="margin-top:4px">
+      <div class="row-info"><div class="row-name">Player ESP</div><div class="row-desc">Bounding box + distance tag</div></div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+    <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">Skeleton Tracer</div></div>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+    <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Name Tags</div></div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+    <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Health Bar</div></div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+    <div class="srow"><div class="srow-top"><span class="srow-name">ESP Range</span><span class="srow-val" id="v3">200 m</span></div>
+      <div class="s-track" data-min="50" data-max="500" data-val="200" data-u=" m" data-id="v3">
+        <div class="s-fill" style="width:33.3%"></div><div class="s-thumb" style="left:33.3%"></div></div></div>
+  </div>
+  <div id="tab-render" style="display:none">
+    <div class="drow" onclick="dt(this)" style="margin-top:4px">
+      <span class="drow-label">Bone Target</span>
+      <div class="drow-right"><span class="dc">Head</span>
+        <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div></div>
+    <div class="dropts">
+      <div class="dopt sel" onclick="so(this)">Head</div>
+      <div class="dopt" onclick="so(this)">Neck</div>
+      <div class="dopt" onclick="so(this)">Chest</div>
+      <div class="dopt" onclick="so(this)">Pelvis</div>
+    </div>
+    <div class="row on" onclick="tog(this)" style="margin-top:6px"><div class="row-info"><div class="row-name">Show FOV Circle</div></div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+    <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">Filled Boxes</div></div>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div id="tab-colors" style="display:none">
+    <div class="crow" style="margin-top:4px"><span class="crow-label">Enemy</span>
+      <div class="crow-right"><div class="swatch" style="background:#ff5757"></div><span class="crow-hex">#FF5757</span></div></div>
+    <div class="crow"><span class="crow-label">Ally</span>
+      <div class="crow-right"><div class="swatch" style="background:#a8ff47"></div><span class="crow-hex">#A8FF47</span></div></div>
+    <div class="crow"><span class="crow-label">Loot</span>
+      <div class="crow-right"><div class="swatch" style="background:#ffb347"></div><span class="crow-hex">#FFB347</span></div></div>
+    <div class="crow"><span class="crow-label">Neutral</span>
+      <div class="crow-right"><div class="swatch" style="background:#5b9fff"></div><span class="crow-hex">#5B9FFF</span></div></div>
+  </div>
+</div>`,
+
+  player:()=>`<div class="page">
+  <div class="label">Stats</div>
+  <div class="row" onclick="tog(this)">
+    <div class="row-info"><div class="row-name">God Mode</div><div class="row-desc">Patches TakeDamage to return 0</div></div>
+    <div class="row-right"><span class="kbd">F8</span>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Infinite Stamina</div></div>
+    <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="srow"><div class="srow-top"><span class="srow-name">HP Override</span><span class="srow-val" id="v4">9999</span></div>
+    <div class="s-track" data-min="100" data-max="9999" data-val="9999" data-id="v4">
+      <div class="s-fill" style="width:99%"></div><div class="s-thumb" style="left:99%"></div></div></div>
+  <div class="label">Economy</div>
+  <div class="row" onclick="tog(this)"><div class="row-info"><div class="row-name">Infinite Currency</div></div>
+    <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="irow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <input class="ifield" value="99,000" type="text"/></div>
+  <div class="brow">
+    <div class="btn p">Inject Value</div>
+    <div class="btn">Read Current</div>
+  </div>
+</div>`,
+
+  scripts:()=>`<div class="page">
+  <div class="label">Loaded</div>
+  <div class="row on" onclick="tog(this)">
+    <div class="row-info">
+      <div class="row-name" style="font-family:'JetBrains Mono',monospace;font-size:12px">auto_loot.js</div>
+      <div class="row-desc">Active — 0 errors</div>
+    </div>
+    <div class="row-right"><div class="pill ok">OK</div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="row on" onclick="tog(this)">
+    <div class="row-info">
+      <div class="row-name" style="font-family:'JetBrains Mono',monospace;font-size:12px">map_hook.js</div>
+      <div class="row-desc">Active — 0 errors</div>
+    </div>
+    <div class="row-right"><div class="pill ok">OK</div>
+      <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="row" onclick="tog(this)">
+    <div class="row-info">
+      <div class="row-name" style="font-family:'JetBrains Mono',monospace;font-size:12px">debug_overlay.js</div>
+      <div class="row-desc">Warning — high memory usage</div>
+    </div>
+    <div class="row-right"><div class="pill warn">WARN</div>
+      <div class="toggle" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  </div>
+  <div class="label">Keybinds</div>
+  <div class="krow"><span class="krow-label">Hot Reload All</span>
+    <div class="chips"><span class="chip">CTRL</span><span class="chip-plus">+</span><span class="chip">R</span></div></div>
+  <div class="krow"><span class="krow-label">Toggle Menu</span>
+    <div class="chips"><span class="chip">DELETE</span></div></div>
+  <div class="krow"><span class="krow-label">Panic Unload</span>
+    <div class="chips"><span class="chip">END</span></div></div>
+  <div class="brow" style="margin-top:2px">
+    <div class="btn p">Reload Scripts</div>
+    <div class="btn">Open Folder</div>
+  </div>
+  <div class="prog"><div class="prog-top"><span>Last Reload</span><span style="color:var(--accent)">3 / 3 OK</span></div>
+    <div class="prog-track"><div class="prog-fill" style="width:100%;background:var(--accent)"></div></div></div>
+</div>`,
+
+  settings:()=>`<div class="page">
+  <div class="label">Interface</div>
+  <div class="drow" onclick="dt(this)">
+    <span class="drow-label">Theme</span>
+    <div class="drow-right"><span class="dc">Obsidian</span>
+      <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div></div>
+  <div class="dropts">
+    <div class="dopt sel" onclick="so(this)">Obsidian</div>
+    <div class="dopt" onclick="so(this)">Crimson</div>
+    <div class="dopt" onclick="so(this)">Frost</div>
+    <div class="dopt" onclick="so(this)">Void</div>
+  </div>
+  <div class="srow" style="margin-top:6px"><div class="srow-top"><span class="srow-name">Window Opacity</span><span class="srow-val" id="v5">92%</span></div>
+    <div class="s-track" data-min="40" data-max="100" data-val="92" data-u="%" data-id="v5">
+      <div class="s-fill" style="width:86.7%"></div><div class="s-thumb" style="left:86.7%"></div></div></div>
+  <div class="row on" onclick="tog(this)"><div class="row-info"><div class="row-name">Show FPS Counter</div></div>
+    <div class="toggle on" onclick="ti(event,this)"><div class="tt"></div><div class="th"></div></div></div>
+  <div class="label">Config</div>
+  <div class="irow"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <input class="ifield" value="default_profile" type="text"/></div>
+  <div class="brow">
+    <div class="btn p">Save Config</div>
+    <div class="btn">Load Config</div>
+    <div class="btn d">Unload DLL</div>
+  </div>
+</div>`
+};
+
+/* ── RENDER ── */
+function go(key, el){
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ct').innerHTML = pages[key]();
+  initSliders();
+}
+
+/* toggles */
+function tog(row){
+  const t = row.querySelector('.toggle');
+  if(t){ t.classList.toggle('on'); row.classList.toggle('on', t.classList.contains('on')); }
+}
+function ti(e,el){
+  e.stopPropagation();
+  el.classList.toggle('on');
+  const r = el.closest('.row');
+  if(r) r.classList.toggle('on', el.classList.contains('on'));
+}
+
+/* dropdown */
+function dt(el){ el.classList.toggle('open'); el.nextElementSibling.classList.toggle('open'); }
+function so(el){
+  el.parentElement.querySelectorAll('.dopt').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+  const dr = el.parentElement.previousElementSibling;
+  dr.querySelector('.dc').textContent = el.textContent;
+  dr.classList.remove('open'); el.parentElement.classList.remove('open');
+}
+
+/* tabs */
+function stab(el, id){
+  el.closest('.page').querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['esp','render','colors'].forEach(k=>{
+    const d=document.getElementById('tab-'+k);
+    if(d) d.style.display = k===id?'':'none';
+  });
+}
+
+/* sliders */
+function initSliders(){
+  document.querySelectorAll('.s-track').forEach(track=>{
+    const fill=track.querySelector('.s-fill');
+    const thumb=track.querySelector('.s-thumb');
+    if(!fill||!thumb) return;
+    const mn=parseFloat(track.dataset.min||0);
+    const mx=parseFloat(track.dataset.max||100);
+    const st=parseFloat(track.dataset.step||1);
+    const u=track.dataset.u||'';
+    const vid=track.dataset.id;
+    let drag=false;
+    function set(pct){
+      pct=Math.max(0,Math.min(1,pct));
+      let v=Math.round((mn+pct*(mx-mn))/st)*st;
+      const p=(v-mn)/(mx-mn)*100;
+      fill.style.width=p+'%'; thumb.style.left=p+'%';
+      if(vid){ const el=document.getElementById(vid);
+        if(el) el.textContent=(Number.isInteger(st)?Math.round(v):v.toFixed(1))+u; }
+    }
+    track.addEventListener('mousedown',e=>{ drag=true; const r=track.getBoundingClientRect(); set((e.clientX-r.left)/r.width); e.preventDefault(); });
+    window.addEventListener('mousemove',e=>{ if(!drag) return; const r=track.getBoundingClientRect(); set((e.clientX-r.left)/r.width); });
+    window.addEventListener('mouseup',()=>{ drag=false; });
+  });
+}
+
+/* button pulse */
+function pulse(el){ el.style.transform='scale(.95)'; setTimeout(()=>el.style.transform='',120); }
+
+/* fps flicker */
+setInterval(()=>{ const f=document.getElementById('fps'); if(f) f.textContent=138+Math.floor(Math.random()*12); }, 1200);
+
+/* boot */
+go('combat', document.querySelector('.nav'));
+</script>
+</body>
+</html>
